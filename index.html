@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>نظام التدقيق الذكي - شركة فاوري</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  
+  body {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #ff8c42 100%);
+    min-height: 100vh;
+    padding: 30px 20px;
+    color: #2c3e50;
+  }
+  
+  .container {
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  
+  .header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+    border-radius: 25px;
+    padding: 30px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+    text-align: center;
+    border: 2px solid rgba(255,255,255,0.5);
+  }
+  
+  .header h1 {
+    background: linear-gradient(135deg, #1e3c72, #ff8c42);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    font-weight: 800;
+  }
+  
+  .header .subtitle {
+    color: #666;
+    font-size: 1.1em;
+    margin-top: 8px;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .stat-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: transform 0.3s;
+    border-top: 5px solid;
+  }
+  
+  .stat-card:hover { transform: translateY(-5px); }
+  
+  .stat-card.blue { border-color: #2a5298; }
+  .stat-card.orange { border-color: #ff8c42; }
+  .stat-card.red { border-color: #e74c3c; }
+  .stat-card.green { border-color: #27ae60; }
+  
+  .stat-card .number {
+    font-size: 2.8em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1e3c72, #ff8c42);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .stat-card .label {
+    color: #555;
+    font-size: 1em;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  
+  .day-section {
+    background: rgba(255,255,255,0.97);
+    border-radius: 25px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  
+  .day-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 20px 25px;
+    border-radius: 18px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  
+  .day-header h2 {
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .badge {
+    background: linear-gradient(135deg, #ff8c42, #ff6b35);
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-size: 0.9em;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(255,107,53,0.4);
+  }
+  
+  .invoices-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  .invoice-card {
+    background: linear-gradient(135deg, #f8f9ff, #ffffff);
+    border-radius: 15px;
+    padding: 18px;
+    border-right: 5px solid #2a5298;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  }
+  
+  .invoice-card h4 {
+    color: #1e3c72;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+  }
+  
+  .invoice-card .info {
+    color: #666;
+    font-size: 0.9em;
+    line-height: 1.8;
+  }
+  
+  .duplicates-title {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .duplicate-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+  }
+  
+  .duplicate-table thead {
+    background: linear-gradient(135deg, #2a5298, #1e3c72);
+    color: white;
+  }
+  
+  .duplicate-table th {
+    padding: 14px 12px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.95em;
+  }
+  
+  .duplicate-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 0.9em;
+  }
+  
+  .duplicate-table tbody tr {
+    background: white;
+    transition: background 0.2s;
+  }
+  
+  .duplicate-table tbody tr:hover {
+    background: linear-gradient(135deg, #fff5eb, #ffffff);
+  }
+  
+  .duplicate-table tbody tr:last-child td { border-bottom: none; }
+  
+  .code-tag {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85em;
+    display: inline-block;
+  }
+  
+  .qty-badge {
+    background: linear-gradient(135deg, #ff8c42, #ff6b35);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 0.85em;
+    display: inline-block;
+  }
+  
+  .invoice-tag {
+    background: linear-gradient(135deg, #2a5298, #1e3c72);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    display: inline-block;
+  }
+  
+  .summary-box {
+    background: linear-gradient(135deg, #fff5eb, #ffe8d6);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    border-right: 5px solid #ff8c42;
+  }
+  
+  .summary-box h3 {
+    color: #1e3c72;
+    margin-bottom: 12px;
+    font-size: 1.2em;
+  }
+  
+  .summary-box ul {
+    list-style: none;
+    padding-right: 0;
+  }
+  
+  .summary-box li {
+    padding: 8px 0;
+    color: #555;
+    border-bottom: 1px dashed #ff8c42;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .summary-box li:last-child { border-bottom: none; }
+  
+  .total-value {
+    font-weight: 800;
+    color: #e74c3c;
+    font-size: 1.1em;
+  }
+  
+  .footer {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    margin-top: 30px;
+    font-size: 0.95em;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  
+  .alert-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: #ff8c42;
+    border-radius: 50%;
+    color: white;
+    text-align: center;
+    line-height: 24px;
+    font-weight: 800;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🎨 نظام التدقيق الذكي لفواتير الشراء</h1>
+    <div class="subtitle">تقرير خاص بشركة فاوري | الفترة: 01/01/2026 - 06/10/2026</div>
+    <div class="subtitle" style="margin-top:5px; color:#ff8c42; font-weight:600;">
+      ⚠️ كشف المواد المتكررة في فواتير نفس اليوم
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="number">16</div>
+      <div class="label">إجمالي فواتير فاوري</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="number">3</div>
+      <div class="label">أيام بها فواتير مكررة</div>
+    </div>
+    <div class="stat-card red">
+      <div class="number">14</div>
+      <div class="label">مادة مكررة تم اكتشافها</div>
+    </div>
+    <div class="stat-card green">
+      <div class="number">100%</div>
+      <div class="label">نسبة التدقيق</div>
+    </div>
+  </div>
+
+  <!-- ============ اليوم الأول 15/6/2026 ============ -->
+  <div class="day-section">
+    <div class="day-header">
+      <h2>📅 اليوم الأول: 15 / 06 / 2026</h2>
+      <div class="badge">3 فواتير في نفس اليوم</div>
+    </div>
+
+    <div class="invoices-row">
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26349</h4>
+        <div class="info">
+          <div>⏰ الوقت: 23:29:29</div>
+          <div>📦 عدد المواد: 50 مادة</div>
+          <div>💰 الإجمالي: 19,089.30 $</div>
+        </div>
+      </div>
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26350</h4>
+        <div class="info">
+          <div>⏰ الوقت: 23:41:55</div>
+          <div>📦 عدد المواد: 46 مادة</div>
+          <div>💰 الإجمالي: 42,930.15 $</div>
+        </div>
+      </div>
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26351 (وسيط)</h4>
+        <div class="info">
+          <div>⏰ الوقت: 23:52:38</div>
+          <div>📦 عدد المواد: 46 مادة</div>
+          <div>💰 الإجمالي: 11,604.25 $</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="duplicates-title">
+      <span class="alert-icon">!</span>
+      المواد المتكررة بين الفاتورتين 26349 و 26350
+    </div>
+
+    <table class="duplicate-table">
+      <thead>
+        <tr>
+          <th>رمز المادة</th>
+          <th>اسم المادة</th>
+          <th>الكمية في 26349</th>
+          <th>الكمية في 26350</th>
+          <th>الإجمالي</th>
+          <th>ملاحظة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="code-tag">1418</span></td>
+          <td>سيلكون مات 20 kg ابيض</td>
+          <td><span class="qty-badge">25</span></td>
+          <td><span class="qty-badge">11</span></td>
+          <td>36 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">1419</span></td>
+          <td>سيلكون مات 10 Kg مكس 1</td>
+          <td><span class="qty-badge">10</span></td>
+          <td><span class="qty-badge">20</span></td>
+          <td>30 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187722</span></td>
+          <td>الترا داخلي 15 لتر مكس 1</td>
+          <td><span class="qty-badge">25</span></td>
+          <td><span class="qty-badge">75</span></td>
+          <td>100 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187763</span></td>
+          <td>برايمر داخلي برو 10K</td>
+          <td><span class="qty-badge">25</span></td>
+          <td><span class="qty-badge">50</span></td>
+          <td>75 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187764</span></td>
+          <td>برايمر داخلي برو 20K</td>
+          <td><span class="qty-badge">50</span></td>
+          <td><span class="qty-badge">165</span></td>
+          <td>215 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187925</span></td>
+          <td>سيلكوني خارجي 15L مكس 1</td>
+          <td><span class="qty-badge">25</span></td>
+          <td><span class="qty-badge">55</span></td>
+          <td>80 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187903</span></td>
+          <td>سيلكون مات 20 kg مكس 1</td>
+          <td><span class="qty-badge">25</span></td>
+          <td><span class="qty-badge">22</span></td>
+          <td>47 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187939</span></td>
+          <td>سيلكوني خارجي ابيض 7.5L</td>
+          <td><span class="qty-badge">10</span></td>
+          <td><span class="qty-badge">15</span></td>
+          <td>25 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187738</span></td>
+          <td>الترا داخلي 7.5L ابيض</td>
+          <td><span class="qty-badge">10</span></td>
+          <td><span class="qty-badge">20</span></td>
+          <td>30 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187723</span></td>
+          <td>الترا داخلي 15 لتر مكس 2</td>
+          <td><span class="qty-badge">3</span></td>
+          <td><span class="qty-badge">30</span></td>
+          <td>33 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187733</span></td>
+          <td>الترا داخلي 7.5 لتر مكس 1</td>
+          <td><span class="qty-badge">10</span></td>
+          <td><span class="qty-badge">25</span></td>
+          <td>35 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">187757</span></td>
+          <td>برايمر خارجي جديد 20 كغ</td>
+          <td><span class="qty-badge">50</span></td>
+          <td><span class="qty-badge">110</span></td>
+          <td>160 قطعة</td>
+          <td>⚠️ تكرار</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-box">
+      <h3>💡 ملاحظات اليوم 15/6/2026</h3>
+      <ul>
+        <li><span>🔸 إجمالي المواد المكررة:</span> <span class="total-value">12 مادة</span></li>
+        <li><span>🔸 أكبر تكرار (برايمر خارجي 20 كغ):</span> <span class="total-value">160 قطعة</span></li>
+        <li><span>🔸 فاتورة وسيط فاوري 26351:</span> <span style="color:#27ae60; font-weight:700;">لا تحتوي على تكرار (مواد كادنز ودوراكس فقط)</span></li>
+        <li><span>🔸 التوصية:</span> <span style="color:#e74c3c; font-weight:700;">دمج الفاتورتين 26349 و 26350 في فاتورة واحدة</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============ اليوم الثاني 1/9/2026 ============ -->
+  <div class="day-section">
+    <div class="day-header">
+      <h2>📅 اليوم الثاني: 01 / 09 / 2026</h2>
+      <div class="badge">3 فواتير في نفس اليوم</div>
+    </div>
+
+    <div class="invoices-row">
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26386</h4>
+        <div class="info">
+          <div>⏰ الوقت: 02:13:55</div>
+          <div>📦 عدد المواد: 1 مادة</div>
+          <div>💰 الإجمالي: 5,775 $</div>
+        </div>
+      </div>
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26387</h4>
+        <div class="info">
+          <div>⏰ الوقت: 09:58:31</div>
+          <div>📦 عدد المواد: 50 مادة</div>
+          <div>💰 الإجمالي: 54,678.86 $</div>
+        </div>
+      </div>
+      <div class="invoice-card">
+        <h4>🧾 فاتورة رقم 26388</h4>
+        <div class="info">
+          <div>⏰ الوقت: 10:37:56</div>
+          <div>📦 عدد المواد: 18 مادة</div>
+          <div>💰 الإجمالي: 9,688.25 $</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="duplicates-title">
+      <span class="alert-icon">!</span>
+      المواد المتكررة بين الفاتورتين 26386 و 26387
+    </div>
+
+    <table class="duplicate-table">
+      <thead>
+        <tr>
+          <th>رمز المادة</th>
+          <th>اسم المادة</th>
+          <th>الكمية في 26386</th>
+          <th>الكمية في 26387</th>
+          <th>الإجمالي</th>
+          <th>ملاحظة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="code-tag">187764</span></td>
+          <td>برايمر داخلي برو 20K</td>
+          <td><span class="qty-badge">210</span></td>
+          <td><span class="qty-badge">210</span></td>
+          <td>420 قطعة</td>
+          <td>⚠️ تكرار كامل</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-box">
+      <h3>💡 ملاحظات اليوم 1/9/2026</h3>
+      <ul>
+        <li><span>🔸 مادة واحدة مكررة:</span> <span class="total-value">برايمر داخلي برو 20K</span></li>
+        <li><span>🔸 إجمالي الكمية المكررة:</span> <span class="total-value">420 قطعة (210+210)</span></li>
+        <li><span>🔸 القيمة المكررة:</span> <span class="total-value">5,775 $</span></li>
+        <li><span>🔸 فاتورة 26388 (دوراكس):</span> <span style="color:#27ae60; font-weight:700;">لا تكرار - مواد مختلفة تماماً</span></li>
+        <li><span>🔸 التوصية:</span> <span style="color:#e74c3c; font-weight:700;">إلغاء فاتورة 26386 ودمجها مع 26387</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============ ملخص عام ============ -->
+  <div class="day-section">
+    <div class="day-header" style="background: linear-gradient(135deg, #ff8c42, #ff6b35);">
+      <h2>📊 الملخص التنفيذي الشامل</h2>
+      <div class="badge" style="background: white; color: #ff6b35;">تقرير نهائي</div>
+    </div>
+
+    <div class="summary-box" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-color: #2a5298;">
+      <h3 style="color: #1e3c72;">🎯 النتائج الرئيسية</h3>
+      <ul>
+        <li><span>✅ إجمالي فواتير شركة فاوري:</span> <span class="total-value" style="color:#1e3c72;">16 فاتورة</span></li>
+        <li><span>✅ أيام بها فواتير متعددة:</span> <span class="total-value" style="color:#1e3c72;">3 أيام</span></li>
+        <li><span>✅ إجمالي المواد المكررة:</span> <span class="total-value">13 مادة</span></li>
+        <li><span>✅ أكبر تكرار من حيث الكمية:</span> <span class="total-value">برايمر داخلي برو 20K (420 قطعة)</span></li>
+        <li><span>✅ أكبر تكرار من حيث التنوع:</span> <span class="total-value">يوم 15/6 (12 مادة مكررة)</span></li>
+      </ul>
+    </div>
+
+    <div class="summary-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: #27ae60; margin-top:15px;">
+      <h3 style="color: #1e3c72;">🔍 المواد الأكثر تكراراً (قابلة للدمج)</h3>
+      <ul>
+        <li><span>🥇 برايمر داخلي برو 20K (187764):</span> <span class="total-value">3 مرات</span></li>
+        <li><span>🥈 برايمر خارجي جديد 20 كغ (187757):</span> <span class="total-value">2 مرات</span></li>
+        <li><span>🥉 سيلكون مات 20 kg ابيض (1418):</span> <span class="total-value">2 مرات</span></li>
+        <li><span>🏅 الترا داخلي 15 لتر مكس 1 (187722):</span> <span class="total-value">2 مرات</span></li>
+      </ul>
+    </div>
+
+    <div class="summary-box" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff8c42; margin-top:15px;">
+      <h3 style="color: #1e3c72;">💼 التوصيات الإدارية</h3>
+      <ul>
+        <li><span>📌 أولاً:</span> <span>توحيد إصدار الفواتير في نهاية اليوم لتجنب التكرار</span></li>
+        <li><span>📌 ثانياً:</span> <span>إنشاء قائمة موحدة واحدة لكل يوم مع شركة فاوري</span></li>
+        <li><span>📌 ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق إن أمكن</span></li>
+        <li><span>📌 رابعاً:</span> <span>تفعيل نظام تنبيه عند تكرار نفس الرمز في نفس اليوم</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    🎨 نظام التدقيق الذكي © 2026 | تم إعداد التقرير في: 06/10/2026<br>
+    <small>تصميم خاص بشركة فاوري - بألوان الدهانات المتدرجة 🎨</small>
+  </div>
+
+</div>
+</body>
+</html>
