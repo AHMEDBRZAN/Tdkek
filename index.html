@@ -48,30 +48,30 @@
   }
   
   .btn {
-    padding: 10px 20px;
+    padding: 12px 25px;
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
-    font-size: 0.9em;
+    font-size: 0.95em;
+    color: white;
   }
   
   .btn-refresh {
     background: linear-gradient(135deg, #27ae60, #2ecc71);
-    color: white;
     box-shadow: 0 5px 15px rgba(39,174,96,0.3);
   }
   
-  .btn-refresh:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(39,174,96,0.4); }
+  .btn-refresh:hover { transform: translateY(-2px); }
+  .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
   
   .btn-export {
     background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
     box-shadow: 0 5px 15px rgba(52,152,219,0.3);
   }
   
-  .btn-export:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(52,152,219,0.4); }
+  .btn-export:hover { transform: translateY(-2px); }
   
   .loading {
     background: white;
@@ -261,6 +261,8 @@
     justify-content: space-between;
     align-items: center;
     font-size: 0.9em;
+    flex-wrap: wrap;
+    gap: 5px;
   }
   .summary-box li:last-child { border-bottom: none; }
   
@@ -335,9 +337,31 @@
     animation: pulse 2s infinite;
   }
   
+  .status-dot.error { background: #e74c3c; }
+  .status-dot.warning { background: #f39c12; }
+  
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+  }
+  
+  .debug-box {
+    background: #fff3cd;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-right: 5px solid #ffc107;
+    font-size: 0.85em;
+  }
+  
+  .debug-box h4 { color: #856404; margin-bottom: 10px; }
+  .debug-box pre {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    color: #333;
   }
   
   @media (max-width: 768px) {
@@ -357,14 +381,14 @@
     <div class="date-info" id="dateInfo">⏳ جاري تحميل البيانات...</div>
     
     <div class="controls">
-      <button class="btn btn-refresh" onclick="manualRefresh()">🔄 تحديث يدوي</button>
-      <button class="btn btn-export" onclick="exportReport()">📊 تصدير التقرير</button>
+      <button class="btn btn-refresh" id="refreshBtn" onclick="manualRefresh()">🔄 تحديث يدوي</button>
+      <button class="btn btn-export" id="exportBtn" onclick="exportReport()">📊 تصدير التقرير</button>
     </div>
   </div>
 
   <div class="status-bar" id="statusBar" style="display:none;">
     <div class="status-item">
-      <div class="status-dot"></div>
+      <div class="status-dot" id="statusDot"></div>
       <span id="statusText">النظام نشط</span>
     </div>
     <div class="status-item">
@@ -375,6 +399,7 @@
     </div>
   </div>
 
+  <div id="debugContainer"></div>
   <div id="content">
     <div class="loading">
       <div class="spinner"></div>
@@ -384,7 +409,7 @@
   </div>
 
   <div class="footer">
-    🎨 نظام التدقيق الذكي © 2026 | تم التصميم بألوان شركة فاوري المتدرجة<br>
+     نظام التدقيق الذكي © 2026 | تم التصميم بألوان شركة فاوري المتدرجة<br>
     <small>يتم تحديث البيانات تلقائياً عند استبدال ملف Excel في المستودع</small>
   </div>
 </div>
@@ -393,43 +418,48 @@
 let currentData = null;
 let refreshInterval = null;
 
-// تحديد مسار الملف مع cache-busting
-function getFilePath() {
-  const timestamp = new Date().getTime();
-  return `فواتير الشراء.xlsx?t=${timestamp}`;
-}
-
-// تحميل Excel مع retry
+// تحميل Excel
 async function loadExcel(retryCount = 0) {
   const maxRetries = 3;
-  const filePath = getFilePath();
+  const timestamp = new Date().getTime();
+  const filePath = `فواتير الشراء.xlsx?t=${timestamp}`;
   
   try {
-    updateStatus(`جاري التحميل... (محاولة ${retryCount + 1})`);
+    updateStatus('جاري التحميل...', 'warning');
     
     const response = await fetch(filePath, {
       cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
+      headers: { 'Cache-Control': 'no-cache' }
     });
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
-    updateStatus('جاري معالجة البيانات...');
+    updateStatus('جاري معالجة البيانات...', 'warning');
     const arrayBuffer = await response.arrayBuffer();
     
-    updateStatus('جاري تحليل الفواتير...');
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    updateStatus('جاري تحليل الفواتير...', 'warning');
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    
+    // عرض أسماء الأوراق للتشخيص
+    console.log('أسماء الأوراق:', workbook.SheetNames);
+    
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+    
+    console.log('عدد الصفوف:', jsonData.length);
+    if (jsonData.length > 0) {
+      console.log('العناوين:', jsonData[0]);
+      console.log('الصف الأول:', jsonData[1]);
+      console.log('الصف الثاني:', jsonData[2]);
+    }
     
     return jsonData;
   } catch (error) {
+    console.error('خطأ في التحميل:', error);
     if (retryCount < maxRetries) {
-      updateStatus(`فشل التحميل، إعادة المحاولة خلال 2 ثانية...`);
+      updateStatus(`فشل التحميل، إعادة المحاولة...`, 'error');
       await new Promise(resolve => setTimeout(resolve, 2000));
       return loadExcel(retryCount + 1);
     }
@@ -437,9 +467,15 @@ async function loadExcel(retryCount = 0) {
   }
 }
 
-function updateStatus(msg) {
+function updateStatus(msg, type = 'success') {
   const el = document.getElementById('statusText');
+  const dot = document.getElementById('statusDot');
   if (el) el.textContent = msg;
+  if (dot) {
+    dot.className = 'status-dot';
+    if (type === 'error') dot.classList.add('error');
+    else if (type === 'warning') dot.classList.add('warning');
+  }
 }
 
 function updateLastUpdate() {
@@ -449,16 +485,37 @@ function updateLastUpdate() {
   document.getElementById('lastUpdate').textContent = `آخر تحديث: ${dateStr} ${timeStr}`;
 }
 
-// تحويل التاريخ
+// تحويل التاريخ - مرن لجميع الصيغ
 function parseDate(dateVal) {
   if (!dateVal) return null;
+  
+  // إذا كان رقم (Excel serial)
   if (typeof dateVal === 'number') {
     const excelEpoch = new Date(1899, 11, 30);
     return new Date(excelEpoch.getTime() + dateVal * 86400000);
   }
+  
+  // إذا كان كائن Date
+  if (dateVal instanceof Date) {
+    return dateVal;
+  }
+  
+  // إذا كان نص
   const str = String(dateVal).trim();
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? null : d;
+  
+  // محاولة صيغ مختلفة
+  const formats = [
+    str,
+    str.replace(/\//g, '-'),
+    str.replace(/-/g, '/'),
+  ];
+  
+  for (const fmt of formats) {
+    const d = new Date(fmt);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  return null;
 }
 
 function formatDate(d) {
@@ -472,65 +529,125 @@ function formatDisplayDate(d) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
-// تحليل البيانات
+// تحليل البيانات - محسّن
 function analyzeData(rows) {
-  const faworiKeywords = ['فاوري', 'وسيط فاوري'];
-  const invoices = [];
+  if (!rows || rows.length < 2) {
+    throw new Error('الملف فارغ أو لا يحتوي على بيانات كافية');
+  }
   
-  rows.forEach(row => {
-    if (!row || row.length < 10) return;
-    const client = String(row[1] || '').trim();
-    const isFawori = faworiKeywords.some(k => client.includes(k));
-    if (!isFawori) return;
+  const headers = rows[0];
+  console.log('العناوين المستخرجة:', headers);
+  
+  // كلمات مفتاحية للبحث عن فاوري
+  const faworiKeywords = ['فاوري', 'وسيط فاوري'];
+  
+  const invoices = {};
+  let lastClient = '';
+  let lastInvoiceNum = null;
+  let lastDate = null;
+  let lastTime = null;
+  let totalRows = 0;
+  let faworiRows = 0;
+  let skippedRows = 0;
+  
+  // تخطي صف العناوين
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 5) continue;
+    totalRows++;
     
-    const invoiceNum = row[2];
-    const time = row[3];
-    const dateVal = row[4];
-    const code = row[6];
-    const material = row[7];
-    const qty = row[9];
-    const price = row[10];
-    const total = row[12];
+    const rowClient = String(row[1] || '').trim();
+    const rowInvoiceNum = row[2];
+    const rowTime = row[3];
+    const rowDate = row[4];
+    const rowType = row[5];
+    const rowCode = row[6];
+    const rowMaterial = row[7];
+    const rowQty = row[9];
+    const rowPrice = row[10];
+    const rowTotal = row[12];
     
-    if (!dateVal || !material) return;
+    // تحديث العميل والفاتورة والتاريخ إذا كانت موجودة
+    if (rowClient) {
+      lastClient = rowClient;
+    }
+    if (rowInvoiceNum !== '' && rowInvoiceNum !== null && rowInvoiceNum !== undefined) {
+      lastInvoiceNum = rowInvoiceNum;
+    }
+    if (rowDate) {
+      const parsed = parseDate(rowDate);
+      if (parsed) lastDate = parsed;
+    }
+    if (rowTime) {
+      lastTime = rowTime;
+    }
     
-    const date = parseDate(dateVal);
-    if (!date) return;
+    // تخطي الصفوف الفارغة أو صفوف الإجمالي
+    if (!rowMaterial && !rowCode) {
+      skippedRows++;
+      continue;
+    }
     
-    const dateKey = formatDate(date);
+    // فلتر فاوري
+    const isFawori = faworiKeywords.some(k => lastClient.includes(k));
+    if (!isFawori) continue;
     
-    let inv = invoices.find(i => i.num === invoiceNum);
-    if (!inv) {
-      inv = {
-        num: invoiceNum,
-        time: time,
-        date: date,
+    faworiRows++;
+    
+    if (!lastDate || !lastInvoiceNum) {
+      console.warn(`صف ${i}: لا يوجد تاريخ أو رقم فاتورة`, { lastClient, lastInvoiceNum, lastDate });
+      continue;
+    }
+    
+    const dateKey = formatDate(lastDate);
+    const invKey = `${lastInvoiceNum}_${dateKey}`;
+    
+    if (!invoices[invKey]) {
+      invoices[invKey] = {
+        num: lastInvoiceNum,
+        time: lastTime,
+        date: lastDate,
         dateKey: dateKey,
-        client: client,
+        client: lastClient,
         items: [],
         total: 0
       };
-      invoices.push(inv);
     }
     
-    if (code && material && qty) {
-      inv.items.push({
-        code: String(code).trim(),
-        name: String(material).trim(),
-        qty: parseFloat(qty) || 0,
-        price: parseFloat(price) || 0,
-        total: parseFloat(total) || 0
+    if (rowCode && rowMaterial && rowQty) {
+      invoices[invKey].items.push({
+        code: String(rowCode).trim(),
+        name: String(rowMaterial).trim(),
+        qty: parseFloat(rowQty) || 0,
+        price: parseFloat(rowPrice) || 0,
+        total: parseFloat(rowTotal) || 0
       });
     }
-  });
+  }
   
+  const invoicesArray = Object.values(invoices);
+  
+  // تجميع حسب اليوم
   const byDay = {};
-  invoices.forEach(inv => {
+  invoicesArray.forEach(inv => {
     if (!byDay[inv.dateKey]) byDay[inv.dateKey] = [];
     byDay[inv.dateKey].push(inv);
   });
   
-  return { invoices, byDay };
+  // معلومات التشخيص
+  const debugInfo = {
+    totalRows,
+    faworiRows,
+    skippedRows,
+    invoicesCount: invoicesArray.length,
+    daysCount: Object.keys(byDay).length,
+    sampleClient: lastClient,
+    sampleInvoice: lastInvoiceNum
+  };
+  
+  console.log('معلومات التشخيص:', debugInfo);
+  
+  return { invoices: invoicesArray, byDay, debugInfo };
 }
 
 // البحث عن التكرارات
@@ -566,22 +683,36 @@ function findDuplicates(invoices) {
   return duplicates;
 }
 
+// عرض معلومات التشخيص
+function showDebugInfo(debugInfo) {
+  const container = document.getElementById('debugContainer');
+  container.innerHTML = `
+    <div class="debug-box">
+      <h4> معلومات التشخيص</h4>
+      <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+    </div>
+  `;
+}
+
 // عرض النتائج
 function renderResults(data) {
   currentData = data;
-  const { invoices, byDay } = data;
+  const { invoices, byDay, debugInfo } = data;
   const content = document.getElementById('content');
   const dateInfo = document.getElementById('dateInfo');
   const statusBar = document.getElementById('statusBar');
   
   statusBar.style.display = 'flex';
   updateLastUpdate();
+  showDebugInfo(debugInfo);
   
   const dates = Object.keys(byDay).sort();
   if (dates.length > 0) {
     const first = dates[0];
     const last = dates[dates.length - 1];
     dateInfo.textContent = `📅 الفترة: ${first} إلى ${last} | عدد فواتير فاوري: ${invoices.length}`;
+  } else {
+    dateInfo.textContent = '⚠️ لم يتم العثور على فواتير فاوري';
   }
   
   let totalInvoices = invoices.length;
@@ -632,6 +763,16 @@ function renderResults(data) {
     </div>
   `;
   
+  if (totalInvoices === 0) {
+    html += `
+      <div class="error-box">
+        <h2>⚠️ لم يتم العثور على فواتير شركة فاوري</h2>
+        <p style="margin-top:15px;">تأكد من وجود عميل باسم "فاوري" أو "وسيط فاوري" في العمود الثاني</p>
+        <p style="margin-top:10px; color:#666;">راجع معلومات التشخيص أعلاه</p>
+      </div>
+    `;
+  }
+  
   daysData.forEach(day => {
     const displayDate = formatDisplayDate(day.date);
     const hasDups = day.duplicates.length > 0;
@@ -648,9 +789,9 @@ function renderResults(data) {
             <div class="invoice-card">
               <h4>🧾 فاتورة رقم ${inv.num}</h4>
               <div class="info">
-                <div>⏰ الوقت: ${inv.time || '-'}</div>
+                <div> الوقت: ${inv.time || '-'}</div>
                 <div>📦 عدد المواد: ${inv.items.length}</div>
-                <div>💰 الإجمالي: ${inv.items.reduce((s,i)=>s+i.total,0).toLocaleString('en-US', {maximumFractionDigits:2})} $</div>
+                <div> الإجمالي: ${inv.items.reduce((s,i)=>s+i.total,0).toLocaleString('en-US', {maximumFractionDigits:2})} $</div>
               </div>
             </div>
           `).join('')}
@@ -728,11 +869,11 @@ function renderResults(data) {
         </div>
         
         <div class="summary-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: #27ae60; margin-top:15px;">
-          <h3> المواد الأكثر تكراراً</h3>
+          <h3>🔍 المواد الأكثر تكراراً</h3>
           <ul>
             ${sorted.slice(0, 5).map(([name, data], idx) => `
               <li>
-                <span>${['','🥈','🥉','4️⃣','5️⃣'][idx]} ${name} (${data.code}):</span>
+                <span>${['🥇','🥈','','4️⃣','5️'][idx]} ${name} (${data.code}):</span>
                 <span class="total-value">${data.count} مرة | ${data.totalQty} قطعة</span>
               </li>
             `).join('')}
@@ -744,7 +885,7 @@ function renderResults(data) {
           <ul>
             <li><span>📌 أولاً:</span> <span>توحيد إصدار الفواتير في نهاية اليوم</span></li>
             <li><span>📌 ثانياً:</span> <span>إنشاء قائمة موحدة واحدة لكل يوم</span></li>
-            <li><span>📌 ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق</span></li>
+            <li><span> ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق</span></li>
             <li><span>📌 رابعاً:</span> <span>تفعيل نظام تنبيه عند التكرار</span></li>
           </ul>
         </div>
@@ -757,7 +898,7 @@ function renderResults(data) {
 
 // تحديث يدوي
 async function manualRefresh() {
-  const btn = document.querySelector('.btn-refresh');
+  const btn = document.getElementById('refreshBtn');
   btn.textContent = '⏳ جاري التحديث...';
   btn.disabled = true;
   
@@ -769,7 +910,7 @@ async function manualRefresh() {
       btn.disabled = false;
     }, 2000);
   } catch (error) {
-    btn.textContent = ' فشل التحديث';
+    btn.textContent = '❌ فشل التحديث';
     setTimeout(() => {
       btn.textContent = '🔄 تحديث يدوي';
       btn.disabled = false;
@@ -807,10 +948,11 @@ function exportReport() {
 async function init() {
   try {
     const rows = await loadExcel();
-    updateStatus('تم التحميل بنجاح! ✓');
+    updateStatus('تم التحميل بنجاح! ✓', 'success');
     const data = analyzeData(rows);
     renderResults(data);
   } catch (error) {
+    console.error('خطأ:', error);
     document.getElementById('content').innerHTML = `
       <div class="error-box">
         <h2>❌ حدث خطأ في تحميل البيانات</h2>
@@ -820,6 +962,7 @@ async function init() {
       </div>
     `;
     document.getElementById('dateInfo').textContent = '⚠️ فشل في تحميل البيانات';
+    updateStatus('فشل التحميل', 'error');
   }
 }
 
