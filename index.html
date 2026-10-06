@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام التدقيق الذكي - شركة فاوري</title>
+<title>نظام إدارة الفواتير - شركة فاوري</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -20,7 +20,7 @@
   .header {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
     border-radius: 25px;
-    padding: 30px 40px;
+    padding: 25px 35px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     margin-bottom: 25px;
     text-align: center;
@@ -31,47 +31,336 @@
     background: linear-gradient(135deg, #1e3c72, #ff8c42);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-size: 2.3em;
-    margin-bottom: 10px;
+    font-size: 2.2em;
+    margin-bottom: 8px;
     font-weight: 800;
   }
   
-  .header .subtitle { color: #666; font-size: 1em; margin-top: 8px; }
-  .header .date-info { color: #ff8c42; font-weight: 600; margin-top: 5px; }
+  .header .subtitle { color: #666; font-size: 1em; }
   
-  .controls {
+  .breadcrumb {
+    background: rgba(255,255,255,0.95);
+    border-radius: 15px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
     display: flex;
+    align-items: center;
     gap: 10px;
-    justify-content: center;
-    margin-top: 15px;
     flex-wrap: wrap;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   }
   
-  .btn {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 25px;
-    font-weight: 700;
+  .breadcrumb-item {
+    color: #666;
     cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 8px;
     transition: all 0.3s;
-    font-size: 0.95em;
+    font-weight: 600;
+  }
+  
+  .breadcrumb-item:hover { background: #f0f0f0; color: #1e3c72; }
+  .breadcrumb-item.active { color: #ff8c42; cursor: default; }
+  .breadcrumb-item.active:hover { background: transparent; }
+  .breadcrumb-separator { color: #999; }
+  
+  .search-box {
+    background: white;
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .search-box input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  
+  .search-box input:focus { border-color: #ff8c42; }
+  
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .category-card {
+    background: linear-gradient(135deg, #ffffff, #f8f9ff);
+    border-radius: 20px;
+    padding: 25px;
+    cursor: pointer;
+    transition: all 0.4s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-right: 6px solid;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .category-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    transition: all 0.6s;
+    opacity: 0;
+  }
+  
+  .category-card:hover::before { opacity: 1; left: 100%; }
+  .category-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.25); }
+  
+  .category-card .cat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    margin-bottom: 15px;
     color: white;
   }
   
-  .btn-refresh {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-    box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+  .category-card .cat-name {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 12px;
+    min-height: 50px;
   }
   
-  .btn-refresh:hover { transform: translateY(-2px); }
-  .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
-  
-  .btn-export {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    box-shadow: 0 5px 15px rgba(52,152,219,0.3);
+  .category-card .cat-stats {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px dashed #e0e0e0;
   }
   
-  .btn-export:hover { transform: translateY(-2px); }
+  .category-card .stat {
+    text-align: center;
+  }
+  
+  .category-card .stat-value {
+    font-size: 1.4em;
+    font-weight: 800;
+    color: #ff8c42;
+  }
+  
+  .category-card .stat-label {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 3px;
+  }
+  
+  .invoices-list {
+    display: grid;
+    gap: 15px;
+  }
+  
+  .invoice-item {
+    background: linear-gradient(135deg, #ffffff, #f8f9ff);
+    border-radius: 18px;
+    padding: 20px 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    border-right: 5px solid #2a5298;
+  }
+  
+  .invoice-item:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    border-right-color: #ff8c42;
+  }
+  
+  .invoice-num {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .invoice-num .num-label { font-size: 0.75em; opacity: 0.8; }
+  .invoice-num .num-value { font-size: 1.3em; font-weight: 800; }
+  
+  .invoice-info { display: flex; flex-direction: column; gap: 6px; }
+  .invoice-info .row { display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.9em; }
+  .invoice-info .label { color: #666; }
+  .invoice-info .value { color: #1e3c72; font-weight: 700; }
+  
+  .invoice-total {
+    text-align: left;
+    min-width: 120px;
+  }
+  
+  .invoice-total .amount {
+    font-size: 1.5em;
+    font-weight: 800;
+    color: #ff8c42;
+  }
+  
+  .invoice-total .currency { font-size: 0.8em; color: #666; }
+  
+  .invoice-dup-badge {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 5px;
+  }
+  
+  .detail-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+  
+  .detail-header .inv-title {
+    font-size: 1.8em;
+    font-weight: 800;
+    margin-bottom: 15px;
+  }
+  
+  .detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+  
+  .detail-info-item {
+    background: rgba(255,255,255,0.15);
+    padding: 12px 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .detail-info-item .lbl { font-size: 0.8em; opacity: 0.85; }
+  .detail-info-item .val { font-size: 1.1em; font-weight: 700; margin-top: 3px; }
+  
+  .detail-section {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  
+  .detail-section h3 {
+    color: #1e3c72;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #ff8c42;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .items-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  }
+  
+  .items-table thead {
+    background: linear-gradient(135deg, #2a5298, #1e3c72);
+    color: white;
+  }
+  
+  .items-table th {
+    padding: 12px 10px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+  
+  .items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 0.88em;
+  }
+  
+  .items-table tbody tr { background: white; transition: background 0.2s; }
+  .items-table tbody tr:hover { background: #fff5eb; }
+  .items-table tbody tr:last-child td { border-bottom: none; }
+  
+  .code-tag {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85em;
+    display: inline-block;
+  }
+  
+  .qty-badge {
+    background: linear-gradient(135deg, #ff8c42, #ff6b35);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 0.85em;
+    display: inline-block;
+  }
+  
+  .duplicates-alert {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-right: 5px solid #e74c3c;
+  }
+  
+  .duplicates-alert h3 {
+    color: #c62828;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .dup-item {
+    background: white;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .dup-item .material-name { font-weight: 700; color: #1e3c72; }
+  .dup-item .material-code { color: #666; font-size: 0.85em; }
+  .dup-item .qty-info { color: #e74c3c; font-weight: 700; }
   
   .loading {
     background: white;
@@ -92,485 +381,173 @@
   
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-  }
-  
-  .stat-card {
-    background: rgba(255,255,255,0.95);
+  .empty-state {
+    background: white;
     border-radius: 20px;
-    padding: 20px;
+    padding: 50px 30px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    transition: transform 0.3s;
-    border-top: 5px solid;
   }
   
-  .stat-card:hover { transform: translateY(-5px); }
-  .stat-card.blue { border-color: #2a5298; }
-  .stat-card.orange { border-color: #ff8c42; }
-  .stat-card.red { border-color: #e74c3c; }
-  .stat-card.green { border-color: #27ae60; }
+  .empty-state .icon { font-size: 4em; margin-bottom: 15px; }
+  .empty-state h3 { color: #1e3c72; margin-bottom: 10px; }
+  .empty-state p { color: #666; }
   
-  .stat-card .number {
-    font-size: 2.5em;
+  .back-btn {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95em;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+  }
+  
+  .back-btn:hover { transform: translateY(-2px); }
+  
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .mini-stat {
+    background: white;
+    border-radius: 15px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-top: 4px solid #ff8c42;
+  }
+  
+  .mini-stat .val {
+    font-size: 1.8em;
     font-weight: 800;
     background: linear-gradient(135deg, #1e3c72, #ff8c42);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   
-  .stat-card .label { color: #555; font-size: 0.95em; margin-top: 8px; font-weight: 600; }
+  .mini-stat .lbl { color: #666; font-size: 0.9em; margin-top: 5px; }
   
-  .day-section {
-    background: rgba(255,255,255,0.97);
-    border-radius: 25px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-  }
-  
-  .day-header {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    padding: 18px 22px;
-    border-radius: 18px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  
-  .day-header h2 { font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
-  
-  .badge {
-    background: linear-gradient(135deg, #ff8c42, #ff6b35);
-    padding: 7px 16px;
-    border-radius: 25px;
-    font-size: 0.85em;
-    font-weight: 700;
-    box-shadow: 0 4px 15px rgba(255,107,53,0.4);
-  }
-  
-  .invoices-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  
-  .invoice-card {
-    background: linear-gradient(135deg, #f8f9ff, #ffffff);
-    border-radius: 15px;
-    padding: 15px;
-    border-right: 5px solid #2a5298;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-  }
-  
-  .invoice-card h4 { color: #1e3c72; margin-bottom: 6px; font-size: 1em; }
-  .invoice-card .info { color: #666; font-size: 0.85em; line-height: 1.7; }
-  
-  .duplicates-title {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
-    padding: 10px 18px;
+  .note-box {
+    background: linear-gradient(135deg, #fff3cd, #ffe69c);
     border-radius: 12px;
-    margin-bottom: 12px;
-    font-size: 1em;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .table-wrapper {
-    overflow-x: auto;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  }
-  
-  .duplicate-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    min-width: 700px;
-  }
-  
-  .duplicate-table thead {
-    background: linear-gradient(135deg, #2a5298, #1e3c72);
-    color: white;
-  }
-  
-  .duplicate-table th {
-    padding: 12px 10px;
-    text-align: right;
-    font-weight: 600;
-    font-size: 0.85em;
-  }
-  
-  .duplicate-table td {
-    padding: 10px;
-    border-bottom: 1px solid #eef2f7;
-    font-size: 0.85em;
-  }
-  
-  .duplicate-table tbody tr { background: white; transition: background 0.2s; }
-  .duplicate-table tbody tr:hover { background: linear-gradient(135deg, #fff5eb, #ffffff); }
-  .duplicate-table tbody tr:last-child td { border-bottom: none; }
-  
-  .code-tag {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    color: #1565c0;
-    padding: 3px 9px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.8em;
-    display: inline-block;
-  }
-  
-  .qty-badge {
-    background: linear-gradient(135deg, #ff8c42, #ff6b35);
-    color: white;
-    padding: 3px 10px;
-    border-radius: 15px;
-    font-weight: 700;
-    font-size: 0.8em;
-    display: inline-block;
-  }
-  
-  .summary-box {
-    background: linear-gradient(135deg, #fff5eb, #ffe8d6);
-    border-radius: 15px;
-    padding: 18px;
-    margin-top: 15px;
-    border-right: 5px solid #ff8c42;
-  }
-  
-  .summary-box h3 { color: #1e3c72; margin-bottom: 10px; font-size: 1.1em; }
-  .summary-box ul { list-style: none; }
-  .summary-box li {
-    padding: 6px 0;
-    color: #555;
-    border-bottom: 1px dashed #ff8c42;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 12px 15px;
+    margin-top: 10px;
     font-size: 0.9em;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .summary-box li:last-child { border-bottom: none; }
-  
-  .total-value { font-weight: 800; color: #e74c3c; font-size: 1em; }
-  
-  .no-duplicates {
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-    border-radius: 15px;
-    padding: 15px;
-    text-align: center;
-    color: #27ae60;
-    font-weight: 700;
-    margin-top: 15px;
-  }
-  
-  .footer {
-    text-align: center;
-    color: white;
-    padding: 20px;
-    margin-top: 25px;
-    font-size: 0.9em;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  }
-  
-  .alert-icon {
-    display: inline-block;
-    width: 22px; height: 22px;
-    background: #ff8c42;
-    border-radius: 50%;
-    color: white;
-    text-align: center;
-    line-height: 22px;
-    font-weight: 800;
-    font-size: 0.8em;
-  }
-  
-  .error-box {
-    background: linear-gradient(135deg, #ffebee, #ffcdd2);
-    border-radius: 20px;
-    padding: 30px;
-    text-align: center;
-    color: #c62828;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-  }
-  
-  .status-bar {
-    background: rgba(255,255,255,0.95);
-    border-radius: 15px;
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-  
-  .status-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-    color: #555;
-  }
-  
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #27ae60;
-    animation: pulse 2s infinite;
-  }
-  
-  .status-dot.error { background: #e74c3c; }
-  .status-dot.warning { background: #f39c12; }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  
-  .debug-box {
-    background: #fff3cd;
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-right: 5px solid #ffc107;
-    font-size: 0.85em;
-  }
-  
-  .debug-box h4 { color: #856404; margin-bottom: 10px; }
-  .debug-box pre {
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-size: 0.9em;
-    color: #333;
+    color: #856404;
+    border-right: 4px solid #ffc107;
   }
   
   @media (max-width: 768px) {
-    .header h1 { font-size: 1.6em; }
+    .header h1 { font-size: 1.5em; }
     .header { padding: 20px; }
-    .day-section { padding: 15px; }
-    .controls { flex-direction: column; }
-    .btn { width: 100%; }
+    .invoice-item { grid-template-columns: 1fr; }
+    .invoice-total { text-align: right; }
+    .categories-grid { grid-template-columns: 1fr; }
   }
+  
+  .fade-in { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>🎨 نظام التدقيق الذكي لفواتير الشراء</h1>
-    <div class="subtitle">تقرير خاص بشركة فاوري | تحليل تلقائي للتكرارات</div>
-    <div class="date-info" id="dateInfo">⏳ جاري تحميل البيانات...</div>
-    
-    <div class="controls">
-      <button class="btn btn-refresh" id="refreshBtn" onclick="manualRefresh()">🔄 تحديث يدوي</button>
-      <button class="btn btn-export" id="exportBtn" onclick="exportReport()">📊 تصدير التقرير</button>
-    </div>
+    <h1>🎨 نظام إدارة فواتير الشراء</h1>
+    <div class="subtitle">تقرير شامل لجميع الشركات | تحليل تلقائي للتكرارات</div>
   </div>
 
-  <div class="status-bar" id="statusBar" style="display:none;">
-    <div class="status-item">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">النظام نشط</span>
-    </div>
-    <div class="status-item">
-      <span id="lastUpdate">آخر تحديث: -</span>
-    </div>
-    <div class="status-item">
-      <span id="autoRefresh">التحديث التلقائي: 5 دقائق</span>
-    </div>
-  </div>
-
-  <div id="debugContainer"></div>
+  <div class="breadcrumb hidden" id="breadcrumb"></div>
+  
   <div id="content">
     <div class="loading">
       <div class="spinner"></div>
-      <h3>جاري قراءة ملف فواتير الشراء...</h3>
-      <p style="color:#666; margin-top:10px;">يتم تحديث البيانات تلقائياً من المستودع</p>
+      <h3>جاري تحميل البيانات...</h3>
     </div>
-  </div>
-
-  <div class="footer">
-     نظام التدقيق الذكي © 2026 | تم التصميم بألوان شركة فاوري المتدرجة<br>
-    <small>يتم تحديث البيانات تلقائياً عند استبدال ملف Excel في المستودع</small>
   </div>
 </div>
 
 <script>
-let currentData = null;
-let refreshInterval = null;
+let appData = null;
+let currentView = 'categories';
+let currentCategory = null;
+let currentInvoice = null;
 
-// تحميل Excel
-async function loadExcel(retryCount = 0) {
-  const maxRetries = 3;
+const categoryColors = [
+  '#2a5298', '#ff8c42', '#27ae60', '#e74c3c', '#9b59b6',
+  '#16a085', '#f39c12', '#34495e', '#c0392b', '#2980b9',
+  '#8e44ad', '#1abc9c', '#d35400', '#7f8c8d', '#e67e22'
+];
+
+const categoryIcons = ['🏢','','🏭','🏪','🔧','🏗️','','🛒','','🔩','🚗','📦','🎯','','🏬'];
+
+async function loadExcel() {
   const timestamp = new Date().getTime();
   const filePath = `فواتير الشراء.xlsx?t=${timestamp}`;
   
-  try {
-    updateStatus('جاري التحميل...', 'warning');
-    
-    const response = await fetch(filePath, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    updateStatus('جاري معالجة البيانات...', 'warning');
-    const arrayBuffer = await response.arrayBuffer();
-    
-    updateStatus('جاري تحليل الفواتير...', 'warning');
-    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-    
-    // عرض أسماء الأوراق للتشخيص
-    console.log('أسماء الأوراق:', workbook.SheetNames);
-    
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-    
-    console.log('عدد الصفوف:', jsonData.length);
-    if (jsonData.length > 0) {
-      console.log('العناوين:', jsonData[0]);
-      console.log('الصف الأول:', jsonData[1]);
-      console.log('الصف الثاني:', jsonData[2]);
-    }
-    
-    return jsonData;
-  } catch (error) {
-    console.error('خطأ في التحميل:', error);
-    if (retryCount < maxRetries) {
-      updateStatus(`فشل التحميل، إعادة المحاولة...`, 'error');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return loadExcel(retryCount + 1);
-    }
-    throw error;
-  }
+  const response = await fetch(filePath, { cache: 'no-store' });
+  if (!response.ok) throw new Error('فشل تحميل الملف');
+  
+  const arrayBuffer = await response.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 }
 
-function updateStatus(msg, type = 'success') {
-  const el = document.getElementById('statusText');
-  const dot = document.getElementById('statusDot');
-  if (el) el.textContent = msg;
-  if (dot) {
-    dot.className = 'status-dot';
-    if (type === 'error') dot.classList.add('error');
-    else if (type === 'warning') dot.classList.add('warning');
-  }
-}
-
-function updateLastUpdate() {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = now.toLocaleDateString('ar-IQ');
-  document.getElementById('lastUpdate').textContent = `آخر تحديث: ${dateStr} ${timeStr}`;
-}
-
-// تحويل التاريخ - مرن لجميع الصيغ
 function parseDate(dateVal) {
   if (!dateVal) return null;
-  
-  // إذا كان رقم (Excel serial)
   if (typeof dateVal === 'number') {
     const excelEpoch = new Date(1899, 11, 30);
     return new Date(excelEpoch.getTime() + dateVal * 86400000);
   }
-  
-  // إذا كان كائن Date
-  if (dateVal instanceof Date) {
-    return dateVal;
-  }
-  
-  // إذا كان نص
+  if (dateVal instanceof Date) return dateVal;
   const str = String(dateVal).trim();
-  
-  // محاولة صيغ مختلفة
-  const formats = [
-    str,
-    str.replace(/\//g, '-'),
-    str.replace(/-/g, '/'),
-  ];
-  
-  for (const fmt of formats) {
-    const d = new Date(fmt);
-    if (!isNaN(d.getTime())) return d;
-  }
-  
-  return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 function formatDate(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function formatDisplayDate(d) {
+  if (!d) return '-';
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
-// تحليل البيانات - محسّن
+function formatNumber(num) {
+  if (!num) return '0';
+  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
 function analyzeData(rows) {
-  if (!rows || rows.length < 2) {
-    throw new Error('الملف فارغ أو لا يحتوي على بيانات كافية');
-  }
-  
-  const headers = rows[0];
-  console.log('العناوين المستخرجة:', headers);
-  
-  // كلمات مفتاحية للبحث عن فاوري
-  const faworiKeywords = ['فاوري', 'وسيط فاوري'];
-  
-  const invoices = {};
+  const categories = {};
   let lastClient = '';
   let lastInvoiceNum = null;
   let lastDate = null;
   let lastTime = null;
-  let totalRows = 0;
-  let faworiRows = 0;
-  let skippedRows = 0;
+  let lastNote = '';
   
-  // تخطي صف العناوين
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || row.length < 5) continue;
-    totalRows++;
+    if (!row || row.length < 10) continue;
     
     const rowClient = String(row[1] || '').trim();
     const rowInvoiceNum = row[2];
     const rowTime = row[3];
     const rowDate = row[4];
-    const rowType = row[5];
     const rowCode = row[6];
     const rowMaterial = row[7];
     const rowQty = row[9];
     const rowPrice = row[10];
     const rowTotal = row[12];
+    const rowNote = row[18] || '';
     
-    // تحديث العميل والفاتورة والتاريخ إذا كانت موجودة
-    if (rowClient) {
-      lastClient = rowClient;
-    }
+    if (rowClient) lastClient = rowClient;
     if (rowInvoiceNum !== '' && rowInvoiceNum !== null && rowInvoiceNum !== undefined) {
       lastInvoiceNum = rowInvoiceNum;
     }
@@ -578,406 +555,398 @@ function analyzeData(rows) {
       const parsed = parseDate(rowDate);
       if (parsed) lastDate = parsed;
     }
-    if (rowTime) {
-      lastTime = rowTime;
+    if (rowTime) lastTime = rowTime;
+    if (rowNote) lastNote = rowNote;
+    
+    if (!rowMaterial && !rowCode) continue;
+    if (!lastClient || !lastInvoiceNum || !lastDate) continue;
+    
+    const catKey = lastClient;
+    if (!categories[catKey]) {
+      categories[catKey] = {
+        name: lastClient,
+        invoices: {},
+        totalAmount: 0,
+        totalItems: 0
+      };
     }
     
-    // تخطي الصفوف الفارغة أو صفوف الإجمالي
-    if (!rowMaterial && !rowCode) {
-      skippedRows++;
-      continue;
-    }
-    
-    // فلتر فاوري
-    const isFawori = faworiKeywords.some(k => lastClient.includes(k));
-    if (!isFawori) continue;
-    
-    faworiRows++;
-    
-    if (!lastDate || !lastInvoiceNum) {
-      console.warn(`صف ${i}: لا يوجد تاريخ أو رقم فاتورة`, { lastClient, lastInvoiceNum, lastDate });
-      continue;
-    }
-    
-    const dateKey = formatDate(lastDate);
+    const dateKey = `${lastDate.getFullYear()}-${String(lastDate.getMonth()+1).padStart(2,'0')}-${String(lastDate.getDate()).padStart(2,'0')}`;
     const invKey = `${lastInvoiceNum}_${dateKey}`;
     
-    if (!invoices[invKey]) {
-      invoices[invKey] = {
+    if (!categories[catKey].invoices[invKey]) {
+      categories[catKey].invoices[invKey] = {
         num: lastInvoiceNum,
-        time: lastTime,
         date: lastDate,
         dateKey: dateKey,
-        client: lastClient,
+        time: lastTime,
+        note: lastNote,
         items: [],
         total: 0
       };
     }
     
     if (rowCode && rowMaterial && rowQty) {
-      invoices[invKey].items.push({
+      const item = {
         code: String(rowCode).trim(),
         name: String(rowMaterial).trim(),
         qty: parseFloat(rowQty) || 0,
         price: parseFloat(rowPrice) || 0,
-        total: parseFloat(rowTotal) || 0
-      });
+        total: parseFloat(rowTotal) || 0,
+        note: String(rowNote || '').trim()
+      };
+      categories[catKey].invoices[invKey].items.push(item);
+      categories[catKey].invoices[invKey].total += item.total;
+      categories[catKey].totalAmount += item.total;
+      categories[catKey].totalItems++;
     }
   }
   
-  const invoicesArray = Object.values(invoices);
+  // تحويل إلى مصفوفة وترتيب
+  const categoriesArray = Object.values(categories)
+    .map((cat, idx) => {
+      cat.invoicesList = Object.values(cat.invoices)
+        .sort((a, b) => b.date - a.date);
+      cat.invoicesCount = cat.invoicesList.length;
+      cat.color = categoryColors[idx % categoryColors.length];
+      cat.icon = categoryIcons[idx % categoryIcons.length];
+      return cat;
+    })
+    .sort((a, b) => b.totalAmount - a.totalAmount);
   
-  // تجميع حسب اليوم
-  const byDay = {};
-  invoicesArray.forEach(inv => {
-    if (!byDay[inv.dateKey]) byDay[inv.dateKey] = [];
-    byDay[inv.dateKey].push(inv);
-  });
-  
-  // معلومات التشخيص
-  const debugInfo = {
-    totalRows,
-    faworiRows,
-    skippedRows,
-    invoicesCount: invoicesArray.length,
-    daysCount: Object.keys(byDay).length,
-    sampleClient: lastClient,
-    sampleInvoice: lastInvoiceNum
-  };
-  
-  console.log('معلومات التشخيص:', debugInfo);
-  
-  return { invoices: invoicesArray, byDay, debugInfo };
+  return { categories: categoriesArray };
 }
 
-// البحث عن التكرارات
-function findDuplicates(invoices) {
+function findDuplicatesForInvoice(invoice, allInvoices) {
   const duplicates = [];
-  
-  for (let i = 0; i < invoices.length; i++) {
-    for (let j = i + 1; j < invoices.length; j++) {
-      const inv1 = invoices[i];
-      const inv2 = invoices[j];
-      
-      const common = [];
-      inv1.items.forEach(item1 => {
-        inv2.items.forEach(item2 => {
-          if (item1.code === item2.code && item1.name === item2.name) {
-            common.push({
-              code: item1.code,
-              name: item1.name,
-              qty1: item1.qty,
-              qty2: item2.qty,
-              total: item1.qty + item2.qty
-            });
-          }
-        });
+  allInvoices.forEach(other => {
+    if (other.num === invoice.num && other.dateKey === invoice.dateKey) return;
+    
+    const common = [];
+    invoice.items.forEach(item1 => {
+      other.items.forEach(item2 => {
+        if (item1.code === item2.code && item1.name === item2.name) {
+          common.push({
+            code: item1.code,
+            name: item1.name,
+            qty1: item1.qty,
+            qty2: item2.qty,
+            total: item1.qty + item2.qty,
+            otherInvoice: other.num,
+            otherDate: other.date
+          });
+        }
       });
-      
-      if (common.length > 0) {
-        duplicates.push({ inv1, inv2, items: common });
-      }
+    });
+    
+    if (common.length > 0) {
+      duplicates.push({ invoice: other, items: common });
     }
-  }
-  
+  });
   return duplicates;
 }
 
-// عرض معلومات التشخيص
-function showDebugInfo(debugInfo) {
-  const container = document.getElementById('debugContainer');
-  container.innerHTML = `
-    <div class="debug-box">
-      <h4> معلومات التشخيص</h4>
-      <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
-    </div>
-  `;
-}
-
-// عرض النتائج
-function renderResults(data) {
-  currentData = data;
-  const { invoices, byDay, debugInfo } = data;
+function renderCategories() {
+  currentView = 'categories';
+  currentCategory = null;
+  currentInvoice = null;
+  
   const content = document.getElementById('content');
-  const dateInfo = document.getElementById('dateInfo');
-  const statusBar = document.getElementById('statusBar');
+  const breadcrumb = document.getElementById('breadcrumb');
+  breadcrumb.classList.add('hidden');
   
-  statusBar.style.display = 'flex';
-  updateLastUpdate();
-  showDebugInfo(debugInfo);
-  
-  const dates = Object.keys(byDay).sort();
-  if (dates.length > 0) {
-    const first = dates[0];
-    const last = dates[dates.length - 1];
-    dateInfo.textContent = `📅 الفترة: ${first} إلى ${last} | عدد فواتير فاوري: ${invoices.length}`;
-  } else {
-    dateInfo.textContent = '⚠️ لم يتم العثور على فواتير فاوري';
-  }
-  
-  let totalInvoices = invoices.length;
-  let daysWithDuplicates = 0;
-  let totalDuplicateItems = 0;
-  let allDuplicates = [];
-  
-  const daysData = [];
-  
-  dates.forEach(dateKey => {
-    const dayInvoices = byDay[dateKey];
-    const dups = findDuplicates(dayInvoices);
-    
-    if (dups.length > 0) {
-      daysWithDuplicates++;
-      dups.forEach(d => {
-        totalDuplicateItems += d.items.length;
-        allDuplicates.push(d);
-      });
-    }
-    
-    daysData.push({
-      dateKey,
-      date: dayInvoices[0].date,
-      invoices: dayInvoices,
-      duplicates: dups
-    });
-  });
+  const totalCats = appData.categories.length;
+  const totalInvoices = appData.categories.reduce((s, c) => s + c.invoicesCount, 0);
+  const totalAmount = appData.categories.reduce((s, c) => s + c.totalAmount, 0);
   
   let html = `
-    <div class="stats-grid">
-      <div class="stat-card blue">
-        <div class="number">${totalInvoices}</div>
-        <div class="label">إجمالي فواتير فاوري</div>
+    <div class="stats-summary fade-in">
+      <div class="mini-stat">
+        <div class="val">${totalCats}</div>
+        <div class="lbl">إجمالي الأصناف</div>
       </div>
-      <div class="stat-card orange">
-        <div class="number">${daysWithDuplicates}</div>
-        <div class="label">أيام بها تكرار</div>
+      <div class="mini-stat">
+        <div class="val">${totalInvoices}</div>
+        <div class="lbl">إجمالي الفواتير</div>
       </div>
-      <div class="stat-card red">
-        <div class="number">${totalDuplicateItems}</div>
-        <div class="label">مواد مكررة</div>
-      </div>
-      <div class="stat-card green">
-        <div class="number">100%</div>
-        <div class="label">نسبة التدقيق</div>
+      <div class="mini-stat">
+        <div class="val">${formatNumber(totalAmount)}</div>
+        <div class="lbl">إجمالي المبيعات ($)</div>
       </div>
     </div>
+    
+    <div class="search-box fade-in">
+      <span style="font-size:1.3em;">🔍</span>
+      <input type="text" id="searchInput" placeholder="ابحث عن شركة..." oninput="filterCategories(this.value)">
+    </div>
+    
+    <div class="categories-grid fade-in" id="categoriesGrid">
   `;
   
-  if (totalInvoices === 0) {
+  appData.categories.forEach(cat => {
     html += `
-      <div class="error-box">
-        <h2>⚠️ لم يتم العثور على فواتير شركة فاوري</h2>
-        <p style="margin-top:15px;">تأكد من وجود عميل باسم "فاوري" أو "وسيط فاوري" في العمود الثاني</p>
-        <p style="margin-top:10px; color:#666;">راجع معلومات التشخيص أعلاه</p>
+      <div class="category-card" style="border-right-color: ${cat.color};" onclick="openCategory('${cat.name.replace(/'/g, "\\'")}')">
+        <div class="cat-icon" style="background: linear-gradient(135deg, ${cat.color}, ${cat.color}dd);">
+          ${cat.icon}
+        </div>
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-stats">
+          <div class="stat">
+            <div class="stat-value">${cat.invoicesCount}</div>
+            <div class="stat-label">فاتورة</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${formatNumber(cat.totalAmount)}</div>
+            <div class="stat-label">إجمالي $</div>
+          </div>
+        </div>
       </div>
     `;
-  }
-  
-  daysData.forEach(day => {
-    const displayDate = formatDisplayDate(day.date);
-    const hasDups = day.duplicates.length > 0;
-    
-    html += `
-      <div class="day-section">
-        <div class="day-header">
-          <h2> ${displayDate}</h2>
-          <div class="badge">${day.invoices.length} فاتورة</div>
-        </div>
-        
-        <div class="invoices-row">
-          ${day.invoices.map(inv => `
-            <div class="invoice-card">
-              <h4>🧾 فاتورة رقم ${inv.num}</h4>
-              <div class="info">
-                <div> الوقت: ${inv.time || '-'}</div>
-                <div>📦 عدد المواد: ${inv.items.length}</div>
-                <div> الإجمالي: ${inv.items.reduce((s,i)=>s+i.total,0).toLocaleString('en-US', {maximumFractionDigits:2})} $</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-    `;
-    
-    if (hasDups) {
-      day.duplicates.forEach(dup => {
-        html += `
-          <div class="duplicates-title">
-            <span class="alert-icon">!</span>
-            المواد المتكررة بين الفاتورتين ${dup.inv1.num} و ${dup.inv2.num}
-          </div>
-          <div class="table-wrapper">
-            <table class="duplicate-table">
-              <thead>
-                <tr>
-                  <th>رمز المادة</th>
-                  <th>اسم المادة</th>
-                  <th>الكمية في ${dup.inv1.num}</th>
-                  <th>الكمية في ${dup.inv2.num}</th>
-                  <th>الإجمالي</th>
-                  <th>ملاحظة</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${dup.items.map(item => `
-                  <tr>
-                    <td><span class="code-tag">${item.code}</span></td>
-                    <td>${item.name}</td>
-                    <td><span class="qty-badge">${item.qty1}</span></td>
-                    <td><span class="qty-badge">${item.qty2}</span></td>
-                    <td>${item.total} قطعة</td>
-                    <td>⚠️ تكرار</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      });
-    } else {
-      html += `<div class="no-duplicates">✅ لا توجد مواد مكررة في هذا اليوم</div>`;
-    }
-    
-    html += `</div>`;
   });
   
-  if (allDuplicates.length > 0) {
-    const materialCounts = {};
-    allDuplicates.forEach(d => {
-      d.items.forEach(item => {
-        if (!materialCounts[item.name]) materialCounts[item.name] = { count: 0, totalQty: 0, code: item.code };
-        materialCounts[item.name].count++;
-        materialCounts[item.name].totalQty += item.total;
-      });
-    });
-    
-    const sorted = Object.entries(materialCounts).sort((a,b) => b[1].count - a[1].count);
-    
-    html += `
-      <div class="day-section">
-        <div class="day-header" style="background: linear-gradient(135deg, #ff8c42, #ff6b35);">
-          <h2>📊 الملخص التنفيذي</h2>
-          <div class="badge" style="background: white; color: #ff6b35;">تقرير نهائي</div>
-        </div>
-        
-        <div class="summary-box" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-color: #2a5298;">
-          <h3>🎯 النتائج الرئيسية</h3>
-          <ul>
-            <li><span>✅ إجمالي فواتير شركة فاوري:</span> <span class="total-value" style="color:#1e3c72;">${totalInvoices}</span></li>
-            <li><span>✅ أيام بها تكرار:</span> <span class="total-value" style="color:#1e3c72;">${daysWithDuplicates}</span></li>
-            <li><span>✅ إجمالي المواد المكررة:</span> <span class="total-value">${totalDuplicateItems}</span></li>
-          </ul>
-        </div>
-        
-        <div class="summary-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: #27ae60; margin-top:15px;">
-          <h3>🔍 المواد الأكثر تكراراً</h3>
-          <ul>
-            ${sorted.slice(0, 5).map(([name, data], idx) => `
-              <li>
-                <span>${['🥇','🥈','','4️⃣','5️'][idx]} ${name} (${data.code}):</span>
-                <span class="total-value">${data.count} مرة | ${data.totalQty} قطعة</span>
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-        
-        <div class="summary-box" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff8c42; margin-top:15px;">
-          <h3>💼 التوصيات الإدارية</h3>
-          <ul>
-            <li><span>📌 أولاً:</span> <span>توحيد إصدار الفواتير في نهاية اليوم</span></li>
-            <li><span>📌 ثانياً:</span> <span>إنشاء قائمة موحدة واحدة لكل يوم</span></li>
-            <li><span> ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق</span></li>
-            <li><span>📌 رابعاً:</span> <span>تفعيل نظام تنبيه عند التكرار</span></li>
-          </ul>
-        </div>
-      </div>
-    `;
-  }
-  
+  html += `</div>`;
   content.innerHTML = html;
 }
 
-// تحديث يدوي
-async function manualRefresh() {
-  const btn = document.getElementById('refreshBtn');
-  btn.textContent = '⏳ جاري التحديث...';
-  btn.disabled = true;
-  
-  try {
-    await init();
-    btn.textContent = '✅ تم التحديث';
-    setTimeout(() => {
-      btn.textContent = '🔄 تحديث يدوي';
-      btn.disabled = false;
-    }, 2000);
-  } catch (error) {
-    btn.textContent = '❌ فشل التحديث';
-    setTimeout(() => {
-      btn.textContent = '🔄 تحديث يدوي';
-      btn.disabled = false;
-    }, 3000);
-  }
+function filterCategories(query) {
+  const cards = document.querySelectorAll('.category-card');
+  const q = query.toLowerCase();
+  cards.forEach(card => {
+    const name = card.querySelector('.cat-name').textContent.toLowerCase();
+    card.style.display = name.includes(q) ? '' : 'none';
+  });
 }
 
-// تصدير التقرير
-function exportReport() {
-  if (!currentData) {
-    alert('لا توجد بيانات للتصدير');
-    return;
-  }
+function openCategory(catName) {
+  currentView = 'category';
+  currentCategory = appData.categories.find(c => c.name === catName);
+  currentInvoice = null;
+  renderCategoryView();
+}
+
+function renderCategoryView() {
+  const content = document.getElementById('content');
+  const breadcrumb = document.getElementById('breadcrumb');
+  breadcrumb.classList.remove('hidden');
+  breadcrumb.innerHTML = `
+    <span class="breadcrumb-item" onclick="renderCategories()"> الرئيسية</span>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-item active">${currentCategory.icon} ${currentCategory.name}</span>
+  `;
   
-  const { invoices, byDay } = currentData;
-  const dates = Object.keys(byDay).sort();
+  const totalItems = currentCategory.invoicesList.reduce((s, inv) => s + inv.items.length, 0);
   
-  let csv = 'التاريخ,رقم الفاتورة,الوقت,عدد المواد,الإجمالي\n';
+  let html = `
+    <div class="stats-summary fade-in">
+      <div class="mini-stat">
+        <div class="val">${currentCategory.invoicesCount}</div>
+        <div class="lbl">عدد الفواتير</div>
+      </div>
+      <div class="mini-stat">
+        <div class="val">${totalItems}</div>
+        <div class="lbl">عدد المواد</div>
+      </div>
+      <div class="mini-stat">
+        <div class="val">${formatNumber(currentCategory.totalAmount)}</div>
+        <div class="lbl">الإجمالي $</div>
+      </div>
+    </div>
+    
+    <div class="search-box fade-in">
+      <span style="font-size:1.3em;">🔍</span>
+      <input type="text" id="searchInv" placeholder="ابحث برقم الفاتورة أو التاريخ..." oninput="filterInvoices(this.value)">
+    </div>
+    
+    <div class="invoices-list fade-in" id="invoicesList">
+  `;
   
-  dates.forEach(dateKey => {
-    byDay[dateKey].forEach(inv => {
-      const total = inv.items.reduce((s,i) => s + i.total, 0);
-      csv += `${dateKey},${inv.num},${inv.time || '-'},${inv.items.length},${total.toFixed(2)}\n`;
-    });
+  currentCategory.invoicesList.forEach(inv => {
+    const dupCount = countDuplicatesForInvoice(inv, currentCategory.invoicesList);
+    html += `
+      <div class="invoice-item" onclick="openInvoice('${inv.num}','${inv.dateKey}')">
+        <div class="invoice-num">
+          <div class="num-label">فاتورة</div>
+          <div class="num-value">${inv.num}</div>
+        </div>
+        <div class="invoice-info">
+          <div class="row">
+            <span><span class="label">📅 التاريخ:</span> <span class="value">${formatDate(inv.date)}</span></span>
+            <span><span class="label">⏰ الوقت:</span> <span class="value">${inv.time || '-'}</span></span>
+          </div>
+          <div class="row">
+            <span><span class="label">📦 عدد المواد:</span> <span class="value">${inv.items.length}</span></span>
+            ${inv.note ? `<span><span class="label">📝 ملاحظة:</span> <span class="value">${inv.note}</span></span>` : ''}
+          </div>
+          ${dupCount > 0 ? `<div><span class="invoice-dup-badge">⚠️ ${dupCount} تكرار مع فواتير أخرى</span></div>` : ''}
+        </div>
+        <div class="invoice-total">
+          <div class="amount">${formatNumber(inv.total)}</div>
+          <div class="currency">$ دولار</div>
+        </div>
+      </div>
+    `;
   });
   
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `تقرير_فاوري_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
+  html += `</div>`;
+  content.innerHTML = html;
 }
 
-// بدء التطبيق
+function countDuplicatesForInvoice(invoice, allInvoices) {
+  let count = 0;
+  allInvoices.forEach(other => {
+    if (other.num === invoice.num && other.dateKey === invoice.dateKey) return;
+    invoice.items.forEach(item1 => {
+      other.items.forEach(item2 => {
+        if (item1.code === item2.code && item1.name === item2.name) {
+          count++;
+        }
+      });
+    });
+  });
+  return count;
+}
+
+function filterInvoices(query) {
+  const items = document.querySelectorAll('.invoice-item');
+  const q = query.toLowerCase();
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+function openInvoice(invNum, dateKey) {
+  currentView = 'invoice';
+  currentInvoice = currentCategory.invoicesList.find(inv => inv.num == invNum && inv.dateKey === dateKey);
+  renderInvoiceView();
+}
+
+function renderInvoiceView() {
+  const content = document.getElementById('content');
+  const breadcrumb = document.getElementById('breadcrumb');
+  breadcrumb.innerHTML = `
+    <span class="breadcrumb-item" onclick="renderCategories()">🏠 الرئيسية</span>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-item" onclick="renderCategoryView()">${currentCategory.icon} ${currentCategory.name}</span>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-item active">فاتورة ${currentInvoice.num}</span>
+  `;
+  
+  const duplicates = findDuplicatesForInvoice(currentInvoice, currentCategory.invoicesList);
+  
+  let html = `
+    <div class="detail-header fade-in">
+      <div class="inv-title">🧾 فاتورة رقم ${currentInvoice.num}</div>
+      <div class="detail-info-grid">
+        <div class="detail-info-item">
+          <div class="lbl">📅 التاريخ</div>
+          <div class="val">${formatDate(currentInvoice.date)}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="lbl">⏰ الوقت</div>
+          <div class="val">${currentInvoice.time || '-'}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="lbl">📦 عدد المواد</div>
+          <div class="val">${currentInvoice.items.length} مادة</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="lbl">💰 الإجمالي</div>
+          <div class="val">${formatNumber(currentInvoice.total)} $</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="lbl">🏢 الشركة</div>
+          <div class="val">${currentCategory.name}</div>
+        </div>
+        ${currentInvoice.note ? `
+        <div class="detail-info-item" style="grid-column: span 2;">
+          <div class="lbl">📝 ملاحظة</div>
+          <div class="val">${currentInvoice.note}</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+  
+  if (duplicates.length > 0) {
+    html += `<div class="duplicates-alert fade-in">
+      <h3>⚠️ تنبيه: مواد مكررة في فواتير أخرى لنفس اليوم/الفترة</h3>`;
+    duplicates.forEach(dup => {
+      html += `<div class="dup-item">
+        <div>
+          <div class="material-name">${dup.items[0].name}</div>
+          <div class="material-code">رمز: ${dup.items[0].code} | فاتورة أخرى: ${dup.invoice.num} (${formatDate(dup.invoice.date)})</div>
+        </div>
+        <div class="qty-info">${dup.items.length} مادة مكررة</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  
+  html += `
+    <div class="detail-section fade-in">
+      <h3> تفاصيل المواد (${currentInvoice.items.length} مادة)</h3>
+      <div style="overflow-x: auto;">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>رمز المادة</th>
+              <th>اسم المادة</th>
+              <th>الوحدة</th>
+              <th>الكمية</th>
+              <th>السعر</th>
+              <th>الإجمالي</th>
+              <th>ملاحظة</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+  
+  currentInvoice.items.forEach((item, idx) => {
+    html += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><span class="code-tag">${item.code}</span></td>
+        <td>${item.name}</td>
+        <td>قطعة</td>
+        <td><span class="qty-badge">${item.qty}</span></td>
+        <td>${formatNumber(item.price)}</td>
+        <td><strong>${formatNumber(item.total)}</strong></td>
+        <td>${item.note || '-'}</td>
+      </tr>
+    `;
+  });
+  
+  html += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  content.innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
 async function init() {
   try {
     const rows = await loadExcel();
-    updateStatus('تم التحميل بنجاح! ✓', 'success');
-    const data = analyzeData(rows);
-    renderResults(data);
+    appData = analyzeData(rows);
+    renderCategories();
   } catch (error) {
-    console.error('خطأ:', error);
     document.getElementById('content').innerHTML = `
-      <div class="error-box">
-        <h2>❌ حدث خطأ في تحميل البيانات</h2>
-        <p style="margin-top:15px;">${error.message}</p>
-        <p style="margin-top:10px; color:#666;">تأكد من وجود ملف "فواتير الشراء.xlsx" في نفس مجلد index.html</p>
-        <button class="btn btn-refresh" onclick="init()" style="margin-top:20px;">🔄 إعادة المحاولة</button>
+      <div class="empty-state">
+        <div class="icon">❌</div>
+        <h3>حدث خطأ في تحميل البيانات</h3>
+        <p>${error.message}</p>
+        <p style="margin-top:10px; color:#666;">تأكد من وجود ملف "فواتير الشراء.xlsx" في نفس المجلد</p>
+        <button class="back-btn" onclick="init()" style="margin-top:20px;">🔄 إعادة المحاولة</button>
       </div>
     `;
-    document.getElementById('dateInfo').textContent = '⚠️ فشل في تحميل البيانات';
-    updateStatus('فشل التحميل', 'error');
   }
 }
 
-// تحديث تلقائي كل 5 دقائق
-function startAutoRefresh() {
-  if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = setInterval(() => {
-    console.log('تحديث تلقائي للبيانات...');
-    init();
-  }, 300000);
-}
-
-// بدء التطبيق
 init();
-startAutoRefresh();
 </script>
 </body>
 </html>
