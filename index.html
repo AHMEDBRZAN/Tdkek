@@ -10,12 +10,23 @@
   body { background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#ff8c42 100%); min-height:100vh; padding:20px; color:#2c3e50; }
   .container { max-width:1400px; margin:0 auto; }
 
+  /* ===== حرية النصوص: لا قصّ ولا اختصار ===== */
+  table.grid th, table.grid td,
+  .cat-name, .invoice-info, .detail-info-item .val, .detail-info-item .lbl,
+  .chip, .badge, .note-box, .iso-note, .dup-item, .breadcrumb-item,
+  .invoice-total, .stat-card .label, .section-title, h1, h2, h3, p, span, div {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+
   .header { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:25px; padding:22px 30px; box-shadow:0 20px 60px rgba(0,0,0,.3); margin-bottom:20px; text-align:center; border:2px solid rgba(255,255,255,.5); }
   .header h1 { background:linear-gradient(135deg,#1e3c72,#ff8c42); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:2em; font-weight:800; margin-bottom:6px; }
   .header .subtitle { color:#666; font-size:.95em; }
 
   .tabs { display:flex; gap:12px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
-  .tab-btn { padding:14px 30px; border:none; border-radius:20px; font-size:1.05em; font-weight:800; cursor:pointer; transition:all .3s; background:rgba(255,255,255,.92); color:#1e3c72; box-shadow:0 8px 25px rgba(0,0,0,.18); }
+  .tab-btn { padding:14px 30px; border:none; border-radius:20px; font-size:1.02em; font-weight:800; cursor:pointer; transition:all .3s; background:rgba(255,255,255,.92); color:#1e3c72; box-shadow:0 8px 25px rgba(0,0,0,.18); }
   .tab-btn:hover { transform:translateY(-3px); }
   .tab-btn.active { background:linear-gradient(135deg,#ff8c42,#ff6b35); color:#fff; box-shadow:0 10px 30px rgba(255,107,53,.45); }
   .tab-btn.active-blue { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; box-shadow:0 10px 30px rgba(42,82,152,.45); }
@@ -27,9 +38,9 @@
   .stat-card .label { color:#555; font-size:.9em; margin-top:6px; font-weight:600; }
 
   .section-box { background:rgba(255,255,255,.97); border-radius:25px; padding:22px; margin-bottom:20px; box-shadow:0 15px 40px rgba(0,0,0,.2); }
-  .section-title { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:15px 20px; border-radius:16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:1.15em; font-weight:800; }
+  .section-title { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:15px 20px; border-radius:16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:1.1em; font-weight:800; }
   .section-title.red { background:linear-gradient(135deg,#e74c3c,#c0392b); }
-  .badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); padding:6px 15px; border-radius:20px; font-size:.8em; font-weight:700; }
+  .badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); padding:6px 15px; border-radius:20px; font-size:.8em; font-weight:700; color:#fff; }
 
   .iso-note { background:linear-gradient(135deg,#fff3cd,#ffe69c); border-right:5px solid #ffc107; border-radius:14px; padding:12px 16px; margin-bottom:18px; color:#856404; font-size:.9em; font-weight:600; }
 
@@ -37,15 +48,39 @@
   .chip { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; padding:7px 14px; border-radius:14px; font-size:.85em; font-weight:700; box-shadow:0 4px 12px rgba(30,60,114,.3); }
   .chip small { opacity:.8; font-weight:400; }
 
-  .table-wrap { overflow-x:auto; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.1); margin-bottom:10px; }
-  table.grid { width:100%; border-collapse:separate; border-spacing:0; min-width:760px; }
-  table.grid thead { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; }
-  table.grid th { padding:12px 10px; text-align:right; font-weight:700; font-size:.85em; white-space:nowrap; }
+  /* ===== حاويات قابلة للتمرير ===== */
+  .table-wrap {
+    overflow:auto;
+    max-height:62vh;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,.1);
+    margin-bottom:10px;
+    background:#fff;
+  }
+  .list-scroll {
+    max-height:70vh;
+    overflow-y:auto;
+    padding:4px 8px 4px 4px;
+  }
+  .table-wrap::-webkit-scrollbar, .list-scroll::-webkit-scrollbar { width:9px; height:9px; }
+  .table-wrap::-webkit-scrollbar-track, .list-scroll::-webkit-scrollbar-track { background:#eef2f7; border-radius:10px; }
+  .table-wrap::-webkit-scrollbar-thumb, .list-scroll::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#ff8c42,#2a5298); border-radius:10px; }
+
+  table.grid { width:100%; border-collapse:separate; border-spacing:0; min-width:720px; }
+  table.grid thead th {
+    position:sticky; top:0; z-index:4;
+    background:linear-gradient(135deg,#2a5298,#1e3c72);
+    color:#fff; padding:12px 10px; text-align:right; font-weight:700; font-size:.85em;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
   table.grid td { padding:10px; border-bottom:1px solid #eef2f7; font-size:.87em; }
   table.grid tbody tr { background:#fff; transition:background .2s; }
   table.grid tbody tr:hover { background:#fff5eb; }
   table.grid tbody tr:last-child td { border-bottom:none; }
-  table.grid tfoot td { background:linear-gradient(135deg,#fff5eb,#ffe8d6); font-weight:800; color:#1e3c72; border-top:2px solid #ff8c42; }
+  table.grid tfoot td {
+    position:sticky; bottom:0; z-index:3;
+    background:linear-gradient(135deg,#fff5eb,#ffe8d6); font-weight:800; color:#1e3c72; border-top:2px solid #ff8c42;
+  }
 
   .code-tag { background:linear-gradient(135deg,#e3f2fd,#bbdefb); color:#1565c0; padding:3px 9px; border-radius:8px; font-weight:700; font-size:.83em; display:inline-block; }
   .qty-badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); color:#fff; padding:3px 11px; border-radius:14px; font-weight:700; font-size:.83em; display:inline-block; }
@@ -55,7 +90,7 @@
   .category-card { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:20px; padding:22px; cursor:pointer; transition:all .35s; box-shadow:0 10px 30px rgba(0,0,0,.15); border-right:6px solid #2a5298; }
   .category-card:hover { transform:translateY(-7px); box-shadow:0 20px 40px rgba(0,0,0,.25); border-right-color:#ff8c42; }
   .category-card .cat-icon { width:55px; height:55px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.7em; margin-bottom:12px; color:#fff; background:linear-gradient(135deg,#2a5298,#1e3c72); }
-  .category-card .cat-name { font-size:1.1em; font-weight:800; color:#1e3c72; margin-bottom:12px; min-height:48px; }
+  .category-card .cat-name { font-size:1.1em; font-weight:800; color:#1e3c72; margin-bottom:12px; }
   .category-card .cat-stats { display:flex; justify-content:space-between; padding-top:10px; border-top:1px dashed #ddd; }
   .category-card .stat-value { font-size:1.25em; font-weight:800; color:#ff8c42; }
   .category-card .stat-label { font-size:.75em; color:#666; margin-top:2px; }
@@ -108,6 +143,8 @@
     .invoice-item { grid-template-columns:1fr; }
     .invoice-total { text-align:right; }
     .tab-btn { width:100%; }
+    .table-wrap { max-height:55vh; }
+    .list-scroll { max-height:60vh; }
   }
 </style>
 </head>
@@ -212,20 +249,20 @@ function analyze(rows){
       cat.invoices[invKey]={num:cur.invNum,date:cur.date,dateKey,time:cur.time,type:cur.type||'شراء',organizer:cur.organizer,note:cur.note,invDiscount:invDisc,items:[]};
     }
     const inv=cat.invoices[invKey];
-    inv.items.push({code,name:material,unit,qty,price,sale,total,disc,discVal,final:fin,note:(invNum? '':note)});
+    inv.items.push({code,name:material,unit,qty,price,sale,total,disc,discVal,final:fin,note:(invNum?'':note)});
     cat.total+=total; cat.itemsCount++;
   }
   const categories=Object.values(cats).map((c,i)=>{
     c.invoicesList=Object.values(c.invoices).sort((a,b)=> b.date-a.date || String(b.num).localeCompare(String(a.num)));
     c.invoicesCount=c.invoicesList.length;
     c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','🎨','','🏪','','🏗️','🧰','','🖌️','🔩','🚗','📦','🎯','','🏬'][i%15];
+    c.icon=['🏢','','🏭','','🧰','️','🛒','🔧','️','🔩','','📦','🎯','🧪','🏬'][i%15];
     return c;
   }).sort((a,b)=>b.total-a.total);
   return {categories};
 }
 
-/* ---------- كشف التشابه (معزول) ---------- */
+/* ---------- كشف التشابه ---------- */
 function computeDuplicates(categories){
   const days=[];
   categories.forEach(cat=>{
@@ -251,10 +288,9 @@ function switchTab(tab){
   document.getElementById('viewCats').classList.toggle('hidden', tab!=='cats');
   document.getElementById('tabDupBtn').className='tab-btn'+(tab==='dup'?' active':'');
   document.getElementById('tabCatsBtn').className='tab-btn'+(tab==='cats'?' active-blue':'');
-  if(tab==='cats' && !catLevel) renderCats();
 }
 
-/* ---------- عرض قسم التشابه (معزول) ---------- */
+/* ---------- قسم التشابه (معزول) ---------- */
 function renderDup(){
   const days=APP.dupDays;
   const involved=new Set(); days.forEach(d=>d.invoices.forEach(i=>involved.add(d.category+'|'+i.num+'|'+i.dateKey)));
@@ -281,7 +317,7 @@ function renderDup(){
           <span class="badge">${day.invoices.length} فواتير | ${day.dups.length} مادة متشابهة</span>
         </div>
         <div class="inv-chips">
-          ${day.invoices.map(inv=>`<span class="chip">🧾 ${inv.num} <small>(${inv.time||'-'})</small></span>`).join('')}
+          ${day.invoices.map(inv=>`<span class="chip">🧾 فاتورة ${inv.num} <small>(${inv.time||'-'})</small></span>`).join('')}
         </div>
         <div class="table-wrap">
           <table class="grid">
@@ -310,7 +346,7 @@ function renderDup(){
   document.getElementById('viewDup').innerHTML=html;
 }
 
-/* ---------- عرض الأصناف ---------- */
+/* ---------- الأصناف ---------- */
 function renderCats(){
   catLevel='cats'; curCat=null; curInv=null;
   let html=`
@@ -340,7 +376,7 @@ function filterCards(q){
   });
 }
 
-/* ---------- فواتير الصنف ---------- */
+/* ---------- فواتير الصنف (قائمة قابلة للتمرير) ---------- */
 function openCategory(name){
   curCat=APP.categories.find(c=>c.name===name); catLevel='invoices'; curInv=null;
   renderInvoices();
@@ -361,7 +397,7 @@ function renderInvoices(){
     <div class="search-box fade-in"><span style="font-size:1.2em;">🔍</span>
       <input type="text" placeholder="ابحث برقم الفاتورة أو التاريخ..." oninput="filterInvs(this.value)">
     </div>
-    <div id="invList" class="fade-in">`;
+    <div id="invList" class="list-scroll fade-in">`;
   curCat.invoicesList.forEach(inv=>{
     const key=curCat.name+'|'+inv.num+'|'+inv.dateKey;
     const isDup=dupSet.has(key);
@@ -389,7 +425,7 @@ function filterInvs(q){
   });
 }
 
-/* ---------- تفاصيل الفاتورة (جدول مطابق للملف) ---------- */
+/* ---------- تفاصيل الفاتورة (جدول مطابق للملف + تمرير) ---------- */
 function openInvoice(num,dateKey){
   curInv=curCat.invoicesList.find(i=>i.num==num&&i.dateKey===dateKey); catLevel='invoice';
   renderInvoiceDetail();
@@ -415,7 +451,7 @@ function renderInvoiceDetail(){
         <div class="detail-info-item"><div class="lbl">🏢 العميل</div><div class="val">${curCat.name}</div></div>
         <div class="detail-info-item"><div class="lbl">📅 التاريخ</div><div class="val">${fmtDate(inv.date)}</div></div>
         <div class="detail-info-item"><div class="lbl">⏰ الوقت</div><div class="val">${inv.time||'-'}</div></div>
-        <div class="detail-info-item"><div class="lbl"> النوع</div><div class="val">${inv.type}</div></div>
+        <div class="detail-info-item"><div class="lbl">📄 النوع</div><div class="val">${inv.type}</div></div>
         <div class="detail-info-item"><div class="lbl">👤 منظم الفاتورة</div><div class="val">${inv.organizer||'-'}</div></div>
         <div class="detail-info-item"><div class="lbl">💵 حسم الفاتورة</div><div class="val">${fmt(inv.invDiscount)}</div></div>
       </div>
@@ -424,7 +460,7 @@ function renderInvoiceDetail(){
     </div>
 
     <div class="section-box fade-in">
-      <div class="section-title"><span>📋 تفاصيل المواد (${inv.items.length} مادة)</span><span class="badge">جدول مطابق لملف الفواتير</span></div>
+      <div class="section-title"><span>📋 تفاصيل المواد (${inv.items.length} مادة)</span><span class="badge">جدول مطابق لملف الفواتير — قابل للتمرير</span></div>
       <div class="table-wrap">
         <table class="grid">
           <thead><tr>
