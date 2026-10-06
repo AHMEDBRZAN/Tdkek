@@ -7,18 +7,18 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Tahoma,sans-serif; }
-  body { background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#ff8c42 100%); min-height:100vh; padding:20px; color:#2c3e50; }
+  body { background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#ff8c42 100%); min-height:100vh; padding:20px; color:#2c3e50; word-break:normal; }
   .container { max-width:1400px; margin:0 auto; }
 
-  /* ===== حرية النصوص: لا قصّ ولا اختصار ===== */
-  table.grid th, table.grid td,
+  /* ===== قاعدة النصوص: كلمات كاملة دائماً، لا كسر داخل الكلمة ===== */
+  table.grid th { white-space:nowrap; }                      /* العناوين بسطر واحد كامل */
+  table.grid td { white-space:nowrap; }                      /* الأرقام والخلايا العادية */
+  table.grid td.wrap { white-space:normal; word-break:normal; overflow-wrap:break-word; } /* النصوص الطويلة تلتف عند المسافات فقط */
+  .qty-badge, .code-tag, .dup-flag, .chip, .badge, .invoice-num .num-value { white-space:nowrap; }
   .cat-name, .invoice-info, .detail-info-item .val, .detail-info-item .lbl,
-  .chip, .badge, .note-box, .iso-note, .dup-item, .breadcrumb-item,
-  .invoice-total, .stat-card .label, .section-title, h1, h2, h3, p, span, div {
-    white-space: normal !important;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    text-overflow: clip;
+  .note-box, .iso-note, .section-title, .breadcrumb-item, .stat-card .label,
+  .header h1, .header .subtitle, .no-dup, .empty-state p {
+    white-space:normal; word-break:normal; overflow-wrap:break-word;
   }
 
   .header { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:25px; padding:22px 30px; box-shadow:0 20px 60px rgba(0,0,0,.3); margin-bottom:20px; text-align:center; border:2px solid rgba(255,255,255,.5); }
@@ -48,43 +48,28 @@
   .chip { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; padding:7px 14px; border-radius:14px; font-size:.85em; font-weight:700; box-shadow:0 4px 12px rgba(30,60,114,.3); }
   .chip small { opacity:.8; font-weight:400; }
 
-  /* ===== حاويات قابلة للتمرير ===== */
-  .table-wrap {
-    overflow:auto;
-    max-height:62vh;
-    border-radius:15px;
-    box-shadow:0 5px 20px rgba(0,0,0,.1);
-    margin-bottom:10px;
-    background:#fff;
-  }
-  .list-scroll {
-    max-height:70vh;
-    overflow-y:auto;
-    padding:4px 8px 4px 4px;
-  }
+  .table-wrap { overflow:auto; max-height:62vh; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.1); margin-bottom:10px; background:#fff; }
+  .list-scroll { max-height:70vh; overflow-y:auto; padding:4px 8px 4px 4px; }
   .table-wrap::-webkit-scrollbar, .list-scroll::-webkit-scrollbar { width:9px; height:9px; }
   .table-wrap::-webkit-scrollbar-track, .list-scroll::-webkit-scrollbar-track { background:#eef2f7; border-radius:10px; }
   .table-wrap::-webkit-scrollbar-thumb, .list-scroll::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#ff8c42,#2a5298); border-radius:10px; }
 
-  table.grid { width:100%; border-collapse:separate; border-spacing:0; min-width:720px; }
+  table.grid { width:100%; border-collapse:separate; border-spacing:0; min-width:1050px; }
   table.grid thead th {
     position:sticky; top:0; z-index:4;
     background:linear-gradient(135deg,#2a5298,#1e3c72);
-    color:#fff; padding:12px 10px; text-align:right; font-weight:700; font-size:.85em;
+    color:#fff; padding:12px 12px; text-align:right; font-weight:700; font-size:.88em;
     box-shadow:0 2px 6px rgba(0,0,0,.15);
   }
-  table.grid td { padding:10px; border-bottom:1px solid #eef2f7; font-size:.87em; }
+  table.grid td { padding:10px 12px; border-bottom:1px solid #eef2f7; font-size:.88em; }
   table.grid tbody tr { background:#fff; transition:background .2s; }
   table.grid tbody tr:hover { background:#fff5eb; }
   table.grid tbody tr:last-child td { border-bottom:none; }
-  table.grid tfoot td {
-    position:sticky; bottom:0; z-index:3;
-    background:linear-gradient(135deg,#fff5eb,#ffe8d6); font-weight:800; color:#1e3c72; border-top:2px solid #ff8c42;
-  }
+  table.grid tfoot td { position:sticky; bottom:0; z-index:3; background:linear-gradient(135deg,#fff5eb,#ffe8d6); font-weight:800; color:#1e3c72; border-top:2px solid #ff8c42; }
 
   .code-tag { background:linear-gradient(135deg,#e3f2fd,#bbdefb); color:#1565c0; padding:3px 9px; border-radius:8px; font-weight:700; font-size:.83em; display:inline-block; }
   .qty-badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); color:#fff; padding:3px 11px; border-radius:14px; font-weight:700; font-size:.83em; display:inline-block; }
-  .dup-flag { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; padding:3px 10px; border-radius:12px; font-size:.75em; font-weight:700; }
+  .dup-flag { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; padding:3px 10px; border-radius:12px; font-size:.75em; font-weight:700; display:inline-block; }
 
   .categories-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; }
   .category-card { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:20px; padding:22px; cursor:pointer; transition:all .35s; box-shadow:0 10px 30px rgba(0,0,0,.15); border-right:6px solid #2a5298; }
@@ -193,6 +178,7 @@ function fmtTime(v){
 function fmtKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtDate(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 function fmt(n){ return Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2}); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---------- تحميل الملف ---------- */
 async function loadExcel(retry=0){
@@ -256,7 +242,7 @@ function analyze(rows){
     c.invoicesList=Object.values(c.invoices).sort((a,b)=> b.date-a.date || String(b.num).localeCompare(String(a.num)));
     c.invoicesCount=c.invoicesList.length;
     c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','','🏭','','🧰','️','🛒','🔧','️','🔩','','📦','🎯','🧪','🏬'][i%15];
+    c.icon=['🏢','🎨','🏭','🏪','🧰','🏗️','','🔧','️','','🚗','','🎯','','🏬'][i%15];
     return c;
   }).sort((a,b)=>b.total-a.total);
   return {categories};
@@ -313,7 +299,7 @@ function renderDup(){
       html+=`
       <div class="section-box fade-in">
         <div class="section-title red">
-          <span>⚠️ يوم ${fmtDate(day.date)} — ${day.category}</span>
+          <span>⚠️ يوم ${fmtDate(day.date)} — ${esc(day.category)}</span>
           <span class="badge">${day.invoices.length} فواتير | ${day.dups.length} مادة متشابهة</span>
         </div>
         <div class="inv-chips">
@@ -331,7 +317,7 @@ function renderDup(){
               const qtys=Object.values(m.per);
               return `<tr>
                 <td><span class="code-tag">${m.code}</span></td>
-                <td>${m.name}</td>
+                <td class="wrap">${esc(m.name)}</td>
                 ${day.invoices.map(inv=>`<td>${m.per[inv.num]!==undefined?`<span class="qty-badge">${fmt(m.per[inv.num])}</span>`:'—'}</td>`).join('')}
                 <td><strong>${fmt(qtys.reduce((a,b)=>a+b,0))}</strong></td>
                 <td><span class="dup-flag">⚠️ مكرر</span></td>
@@ -358,7 +344,7 @@ function renderCats(){
     html+=`
     <div class="category-card" style="border-right-color:${cat.color}" onclick="openCategory('${cat.name.replace(/'/g,"\\'")}')">
       <div class="cat-icon" style="background:linear-gradient(135deg,${cat.color},${cat.color}cc)">${cat.icon}</div>
-      <div class="cat-name">${cat.name}</div>
+      <div class="cat-name">${esc(cat.name)}</div>
       <div class="cat-stats">
         <div style="text-align:center"><div class="stat-value">${cat.invoicesCount}</div><div class="stat-label">فاتورة</div></div>
         <div style="text-align:center"><div class="stat-value">${fmt(cat.itemsCount)}</div><div class="stat-label">مادة</div></div>
@@ -376,7 +362,7 @@ function filterCards(q){
   });
 }
 
-/* ---------- فواتير الصنف (قائمة قابلة للتمرير) ---------- */
+/* ---------- فواتير الصنف ---------- */
 function openCategory(name){
   curCat=APP.categories.find(c=>c.name===name); catLevel='invoices'; curInv=null;
   renderInvoices();
@@ -387,7 +373,7 @@ function renderInvoices(){
     <div class="breadcrumb">
       <span class="breadcrumb-item" onclick="renderCats()">🏠 الأصناف</span>
       <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item active">${curCat.icon} ${curCat.name}</span>
+      <span class="breadcrumb-item active">${curCat.icon} ${esc(curCat.name)}</span>
     </div>
     <div class="stats-grid fade-in">
       <div class="stat-card"><div class="number">${curCat.invoicesCount}</div><div class="label">عدد الفواتير</div></div>
@@ -408,8 +394,8 @@ function renderInvoices(){
         <div class="row"><span><span class="label">📅</span> <span class="value">${fmtDate(inv.date)}</span></span>
         <span><span class="label">⏰</span> <span class="value">${inv.time||'-'}</span></span>
         <span><span class="label">📦</span> <span class="value">${inv.items.length} مادة</span></span></div>
-        <div class="row"><span><span class="label">👤 المنظم:</span> <span class="value">${inv.organizer||'-'}</span></span></div>
-        ${inv.note?`<div class="row"><span style="color:#856404">📝 ${inv.note}</span></div>`:''}
+        <div class="row"><span><span class="label">👤 المنظم:</span> <span class="value">${esc(inv.organizer)||'-'}</span></span></div>
+        ${inv.note?`<div class="row"><span style="color:#856404">📝 ${esc(inv.note)}</span></div>`:''}
         ${isDup?`<div><span class="dup-flag">⚠️ بها تشابه مع فاتورة أخرى بنفس اليوم</span></div>`:''}
       </div>
       <div class="invoice-total"><div class="amount">${fmt(inv.items.reduce((s,i)=>s+i.total,0))}</div><div class="currency">دينار / $</div></div>
@@ -425,7 +411,7 @@ function filterInvs(q){
   });
 }
 
-/* ---------- تفاصيل الفاتورة (جدول مطابق للملف + تمرير) ---------- */
+/* ---------- تفاصيل الفاتورة ---------- */
 function openInvoice(num,dateKey){
   curInv=curCat.invoicesList.find(i=>i.num==num&&i.dateKey===dateKey); catLevel='invoice';
   renderInvoiceDetail();
@@ -441,21 +427,21 @@ function renderInvoiceDetail(){
     <div class="breadcrumb">
       <span class="breadcrumb-item" onclick="renderCats()">🏠 الأصناف</span>
       <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item" onclick="renderInvoices()">${curCat.icon} ${curCat.name}</span>
+      <span class="breadcrumb-item" onclick="renderInvoices()">${curCat.icon} ${esc(curCat.name)}</span>
       <span class="breadcrumb-sep">›</span>
       <span class="breadcrumb-item active">فاتورة ${inv.num}</span>
     </div>
     <div class="detail-header fade-in">
       <div class="inv-title">🧾 فاتورة رقم ${inv.num}</div>
       <div class="detail-info-grid">
-        <div class="detail-info-item"><div class="lbl">🏢 العميل</div><div class="val">${curCat.name}</div></div>
+        <div class="detail-info-item"><div class="lbl">🏢 العميل</div><div class="val">${esc(curCat.name)}</div></div>
         <div class="detail-info-item"><div class="lbl">📅 التاريخ</div><div class="val">${fmtDate(inv.date)}</div></div>
         <div class="detail-info-item"><div class="lbl">⏰ الوقت</div><div class="val">${inv.time||'-'}</div></div>
-        <div class="detail-info-item"><div class="lbl">📄 النوع</div><div class="val">${inv.type}</div></div>
-        <div class="detail-info-item"><div class="lbl">👤 منظم الفاتورة</div><div class="val">${inv.organizer||'-'}</div></div>
+        <div class="detail-info-item"><div class="lbl">📄 النوع</div><div class="val">${esc(inv.type)}</div></div>
+        <div class="detail-info-item"><div class="lbl">👤 منظم الفاتورة</div><div class="val">${esc(inv.organizer)||'-'}</div></div>
         <div class="detail-info-item"><div class="lbl">💵 حسم الفاتورة</div><div class="val">${fmt(inv.invDiscount)}</div></div>
       </div>
-      ${inv.note?`<div class="note-box" style="background:rgba(255,255,255,.15);color:#fff;border-color:#ff8c42">📝 البيان: ${inv.note}</div>`:''}
+      ${inv.note?`<div class="note-box" style="background:rgba(255,255,255,.15);color:#fff;border-color:#ff8c42">📝 البيان: ${esc(inv.note)}</div>`:''}
       ${APP.dupSet.has(dupKey)?`<button class="link-btn" onclick="switchTab('dup')">⚠️ عرض هذه الفاتورة في قسم التشابه</button>`:''}
     </div>
 
@@ -473,8 +459,8 @@ function renderInvoiceDetail(){
             <tr>
               <td>${idx+1}</td>
               <td><span class="code-tag">${it.code}</span></td>
-              <td>${it.name}</td>
-              <td>${it.unit||'قطعة'}</td>
+              <td class="wrap">${esc(it.name)}</td>
+              <td>${esc(it.unit)||'قطعة'}</td>
               <td><span class="qty-badge">${fmt(it.qty)}</span></td>
               <td>${fmt(it.price)}</td>
               <td>${fmt(it.sale)}</td>
@@ -482,7 +468,7 @@ function renderInvoiceDetail(){
               <td>${fmt(it.disc)}</td>
               <td>${fmt(it.discVal)}</td>
               <td>${fmt(it.final)}</td>
-              <td>${it.note?`<span style="color:#856404;font-weight:700">${it.note}</span>`:'-'}</td>
+              <td class="wrap">${it.note?`<span style="color:#856404;font-weight:700">${esc(it.note)}</span>`:'-'}</td>
             </tr>`).join('')}
           </tbody>
           <tfoot><tr>
