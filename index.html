@@ -2,28 +2,27 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>نظام التدقيق الذكي - شركة فاوري</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
   
   body {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #ff8c42 100%);
     min-height: 100vh;
-    padding: 30px 20px;
+    padding: 20px;
     color: #2c3e50;
   }
   
-  .container {
-    max-width: 1300px;
-    margin: 0 auto;
-  }
+  .container { max-width: 1400px; margin: 0 auto; }
   
   .header {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
     border-radius: 25px;
     padding: 30px 40px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     text-align: center;
     border: 2px solid rgba(255,255,255,0.5);
   }
@@ -32,28 +31,44 @@
     background: linear-gradient(135deg, #1e3c72, #ff8c42);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-size: 2.5em;
+    font-size: 2.3em;
     margin-bottom: 10px;
     font-weight: 800;
   }
   
-  .header .subtitle {
-    color: #666;
-    font-size: 1.1em;
-    margin-top: 8px;
+  .header .subtitle { color: #666; font-size: 1em; margin-top: 8px; }
+  .header .date-info { color: #ff8c42; font-weight: 600; margin-top: 5px; }
+  
+  .loading {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
   }
+  
+  .spinner {
+    width: 60px; height: 60px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #ff8c42;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+  
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
   }
   
   .stat-card {
     background: rgba(255,255,255,0.95);
     border-radius: 20px;
-    padding: 25px;
+    padding: 20px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     transition: transform 0.3s;
@@ -61,113 +76,95 @@
   }
   
   .stat-card:hover { transform: translateY(-5px); }
-  
   .stat-card.blue { border-color: #2a5298; }
   .stat-card.orange { border-color: #ff8c42; }
   .stat-card.red { border-color: #e74c3c; }
   .stat-card.green { border-color: #27ae60; }
   
   .stat-card .number {
-    font-size: 2.8em;
+    font-size: 2.5em;
     font-weight: 800;
     background: linear-gradient(135deg, #1e3c72, #ff8c42);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   
-  .stat-card .label {
-    color: #555;
-    font-size: 1em;
-    margin-top: 8px;
-    font-weight: 600;
-  }
+  .stat-card .label { color: #555; font-size: 0.95em; margin-top: 8px; font-weight: 600; }
   
   .day-section {
     background: rgba(255,255,255,0.97);
     border-radius: 25px;
-    padding: 30px;
-    margin-bottom: 25px;
+    padding: 25px;
+    margin-bottom: 20px;
     box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    overflow: hidden;
   }
   
   .day-header {
     background: linear-gradient(135deg, #1e3c72, #2a5298);
     color: white;
-    padding: 20px 25px;
+    padding: 18px 22px;
     border-radius: 18px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
-  }
-  
-  .day-header h2 {
-    font-size: 1.5em;
-    display: flex;
-    align-items: center;
     gap: 10px;
   }
   
+  .day-header h2 { font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
+  
   .badge {
     background: linear-gradient(135deg, #ff8c42, #ff6b35);
-    padding: 8px 18px;
+    padding: 7px 16px;
     border-radius: 25px;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: 700;
     box-shadow: 0 4px 15px rgba(255,107,53,0.4);
   }
   
   .invoices-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
   }
   
   .invoice-card {
     background: linear-gradient(135deg, #f8f9ff, #ffffff);
     border-radius: 15px;
-    padding: 18px;
+    padding: 15px;
     border-right: 5px solid #2a5298;
     box-shadow: 0 5px 15px rgba(0,0,0,0.08);
   }
   
-  .invoice-card h4 {
-    color: #1e3c72;
-    margin-bottom: 8px;
-    font-size: 1.1em;
-  }
-  
-  .invoice-card .info {
-    color: #666;
-    font-size: 0.9em;
-    line-height: 1.8;
-  }
+  .invoice-card h4 { color: #1e3c72; margin-bottom: 6px; font-size: 1em; }
+  .invoice-card .info { color: #666; font-size: 0.85em; line-height: 1.7; }
   
   .duplicates-title {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     color: white;
-    padding: 12px 20px;
+    padding: 10px 18px;
     border-radius: 12px;
-    margin-bottom: 15px;
-    font-size: 1.1em;
+    margin-bottom: 12px;
+    font-size: 1em;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
   }
   
   .duplicate-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
+    min-width: 700px;
   }
   
   .duplicate-table thead {
@@ -176,426 +173,491 @@
   }
   
   .duplicate-table th {
-    padding: 14px 12px;
+    padding: 12px 10px;
     text-align: right;
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: 0.85em;
   }
   
   .duplicate-table td {
-    padding: 12px;
+    padding: 10px;
     border-bottom: 1px solid #eef2f7;
-    font-size: 0.9em;
+    font-size: 0.85em;
   }
   
-  .duplicate-table tbody tr {
-    background: white;
-    transition: background 0.2s;
-  }
-  
-  .duplicate-table tbody tr:hover {
-    background: linear-gradient(135deg, #fff5eb, #ffffff);
-  }
-  
+  .duplicate-table tbody tr { background: white; transition: background 0.2s; }
+  .duplicate-table tbody tr:hover { background: linear-gradient(135deg, #fff5eb, #ffffff); }
   .duplicate-table tbody tr:last-child td { border-bottom: none; }
   
   .code-tag {
     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
     color: #1565c0;
-    padding: 4px 10px;
+    padding: 3px 9px;
     border-radius: 8px;
     font-weight: 700;
-    font-size: 0.85em;
+    font-size: 0.8em;
     display: inline-block;
   }
   
   .qty-badge {
     background: linear-gradient(135deg, #ff8c42, #ff6b35);
     color: white;
-    padding: 4px 12px;
+    padding: 3px 10px;
     border-radius: 15px;
     font-weight: 700;
-    font-size: 0.85em;
-    display: inline-block;
-  }
-  
-  .invoice-tag {
-    background: linear-gradient(135deg, #2a5298, #1e3c72);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 8px;
     font-size: 0.8em;
-    font-weight: 600;
     display: inline-block;
   }
   
   .summary-box {
     background: linear-gradient(135deg, #fff5eb, #ffe8d6);
     border-radius: 15px;
-    padding: 20px;
-    margin-top: 20px;
+    padding: 18px;
+    margin-top: 15px;
     border-right: 5px solid #ff8c42;
   }
   
-  .summary-box h3 {
-    color: #1e3c72;
-    margin-bottom: 12px;
-    font-size: 1.2em;
-  }
-  
-  .summary-box ul {
-    list-style: none;
-    padding-right: 0;
-  }
-  
+  .summary-box h3 { color: #1e3c72; margin-bottom: 10px; font-size: 1.1em; }
+  .summary-box ul { list-style: none; }
   .summary-box li {
-    padding: 8px 0;
+    padding: 6px 0;
     color: #555;
     border-bottom: 1px dashed #ff8c42;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 0.9em;
   }
-  
   .summary-box li:last-child { border-bottom: none; }
   
-  .total-value {
-    font-weight: 800;
-    color: #e74c3c;
-    font-size: 1.1em;
+  .total-value { font-weight: 800; color: #e74c3c; font-size: 1em; }
+  
+  .no-duplicates {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    color: #27ae60;
+    font-weight: 700;
+    margin-top: 15px;
   }
   
   .footer {
     text-align: center;
     color: white;
     padding: 20px;
-    margin-top: 30px;
-    font-size: 0.95em;
+    margin-top: 25px;
+    font-size: 0.9em;
     text-shadow: 0 2px 10px rgba(0,0,0,0.3);
   }
   
   .alert-icon {
     display: inline-block;
-    width: 24px;
-    height: 24px;
+    width: 22px; height: 22px;
     background: #ff8c42;
     border-radius: 50%;
     color: white;
     text-align: center;
-    line-height: 24px;
+    line-height: 22px;
     font-weight: 800;
+    font-size: 0.8em;
+  }
+  
+  .error-box {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    color: #c62828;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  }
+  
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.6em; }
+    .header { padding: 20px; }
+    .day-section { padding: 15px; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-
   <div class="header">
-    <h1>🎨 نظام التدقيق الذكي لفواتير الشراء</h1>
-    <div class="subtitle">تقرير خاص بشركة فاوري | الفترة: 01/01/2026 - 06/10/2026</div>
-    <div class="subtitle" style="margin-top:5px; color:#ff8c42; font-weight:600;">
-      ⚠️ كشف المواد المتكررة في فواتير نفس اليوم
-    </div>
+    <h1> نظام التدقيق الذكي لفواتير الشراء</h1>
+    <div class="subtitle">تقرير خاص بشركة فاوري | تحليل تلقائي للتكرارات</div>
+    <div class="date-info" id="dateInfo">⏳ جاري تحميل البيانات...</div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card blue">
-      <div class="number">16</div>
-      <div class="label">إجمالي فواتير فاوري</div>
-    </div>
-    <div class="stat-card orange">
-      <div class="number">3</div>
-      <div class="label">أيام بها فواتير مكررة</div>
-    </div>
-    <div class="stat-card red">
-      <div class="number">14</div>
-      <div class="label">مادة مكررة تم اكتشافها</div>
-    </div>
-    <div class="stat-card green">
-      <div class="number">100%</div>
-      <div class="label">نسبة التدقيق</div>
-    </div>
-  </div>
-
-  <!-- ============ اليوم الأول 15/6/2026 ============ -->
-  <div class="day-section">
-    <div class="day-header">
-      <h2>📅 اليوم الأول: 15 / 06 / 2026</h2>
-      <div class="badge">3 فواتير في نفس اليوم</div>
-    </div>
-
-    <div class="invoices-row">
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26349</h4>
-        <div class="info">
-          <div>⏰ الوقت: 23:29:29</div>
-          <div>📦 عدد المواد: 50 مادة</div>
-          <div>💰 الإجمالي: 19,089.30 $</div>
-        </div>
-      </div>
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26350</h4>
-        <div class="info">
-          <div>⏰ الوقت: 23:41:55</div>
-          <div>📦 عدد المواد: 46 مادة</div>
-          <div>💰 الإجمالي: 42,930.15 $</div>
-        </div>
-      </div>
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26351 (وسيط)</h4>
-        <div class="info">
-          <div>⏰ الوقت: 23:52:38</div>
-          <div>📦 عدد المواد: 46 مادة</div>
-          <div>💰 الإجمالي: 11,604.25 $</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="duplicates-title">
-      <span class="alert-icon">!</span>
-      المواد المتكررة بين الفاتورتين 26349 و 26350
-    </div>
-
-    <table class="duplicate-table">
-      <thead>
-        <tr>
-          <th>رمز المادة</th>
-          <th>اسم المادة</th>
-          <th>الكمية في 26349</th>
-          <th>الكمية في 26350</th>
-          <th>الإجمالي</th>
-          <th>ملاحظة</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="code-tag">1418</span></td>
-          <td>سيلكون مات 20 kg ابيض</td>
-          <td><span class="qty-badge">25</span></td>
-          <td><span class="qty-badge">11</span></td>
-          <td>36 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">1419</span></td>
-          <td>سيلكون مات 10 Kg مكس 1</td>
-          <td><span class="qty-badge">10</span></td>
-          <td><span class="qty-badge">20</span></td>
-          <td>30 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187722</span></td>
-          <td>الترا داخلي 15 لتر مكس 1</td>
-          <td><span class="qty-badge">25</span></td>
-          <td><span class="qty-badge">75</span></td>
-          <td>100 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187763</span></td>
-          <td>برايمر داخلي برو 10K</td>
-          <td><span class="qty-badge">25</span></td>
-          <td><span class="qty-badge">50</span></td>
-          <td>75 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187764</span></td>
-          <td>برايمر داخلي برو 20K</td>
-          <td><span class="qty-badge">50</span></td>
-          <td><span class="qty-badge">165</span></td>
-          <td>215 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187925</span></td>
-          <td>سيلكوني خارجي 15L مكس 1</td>
-          <td><span class="qty-badge">25</span></td>
-          <td><span class="qty-badge">55</span></td>
-          <td>80 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187903</span></td>
-          <td>سيلكون مات 20 kg مكس 1</td>
-          <td><span class="qty-badge">25</span></td>
-          <td><span class="qty-badge">22</span></td>
-          <td>47 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187939</span></td>
-          <td>سيلكوني خارجي ابيض 7.5L</td>
-          <td><span class="qty-badge">10</span></td>
-          <td><span class="qty-badge">15</span></td>
-          <td>25 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187738</span></td>
-          <td>الترا داخلي 7.5L ابيض</td>
-          <td><span class="qty-badge">10</span></td>
-          <td><span class="qty-badge">20</span></td>
-          <td>30 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187723</span></td>
-          <td>الترا داخلي 15 لتر مكس 2</td>
-          <td><span class="qty-badge">3</span></td>
-          <td><span class="qty-badge">30</span></td>
-          <td>33 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187733</span></td>
-          <td>الترا داخلي 7.5 لتر مكس 1</td>
-          <td><span class="qty-badge">10</span></td>
-          <td><span class="qty-badge">25</span></td>
-          <td>35 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-        <tr>
-          <td><span class="code-tag">187757</span></td>
-          <td>برايمر خارجي جديد 20 كغ</td>
-          <td><span class="qty-badge">50</span></td>
-          <td><span class="qty-badge">110</span></td>
-          <td>160 قطعة</td>
-          <td>⚠️ تكرار</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="summary-box">
-      <h3>💡 ملاحظات اليوم 15/6/2026</h3>
-      <ul>
-        <li><span>🔸 إجمالي المواد المكررة:</span> <span class="total-value">12 مادة</span></li>
-        <li><span>🔸 أكبر تكرار (برايمر خارجي 20 كغ):</span> <span class="total-value">160 قطعة</span></li>
-        <li><span>🔸 فاتورة وسيط فاوري 26351:</span> <span style="color:#27ae60; font-weight:700;">لا تحتوي على تكرار (مواد كادنز ودوراكس فقط)</span></li>
-        <li><span>🔸 التوصية:</span> <span style="color:#e74c3c; font-weight:700;">دمج الفاتورتين 26349 و 26350 في فاتورة واحدة</span></li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ============ اليوم الثاني 1/9/2026 ============ -->
-  <div class="day-section">
-    <div class="day-header">
-      <h2>📅 اليوم الثاني: 01 / 09 / 2026</h2>
-      <div class="badge">3 فواتير في نفس اليوم</div>
-    </div>
-
-    <div class="invoices-row">
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26386</h4>
-        <div class="info">
-          <div>⏰ الوقت: 02:13:55</div>
-          <div>📦 عدد المواد: 1 مادة</div>
-          <div>💰 الإجمالي: 5,775 $</div>
-        </div>
-      </div>
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26387</h4>
-        <div class="info">
-          <div>⏰ الوقت: 09:58:31</div>
-          <div>📦 عدد المواد: 50 مادة</div>
-          <div>💰 الإجمالي: 54,678.86 $</div>
-        </div>
-      </div>
-      <div class="invoice-card">
-        <h4>🧾 فاتورة رقم 26388</h4>
-        <div class="info">
-          <div>⏰ الوقت: 10:37:56</div>
-          <div>📦 عدد المواد: 18 مادة</div>
-          <div>💰 الإجمالي: 9,688.25 $</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="duplicates-title">
-      <span class="alert-icon">!</span>
-      المواد المتكررة بين الفاتورتين 26386 و 26387
-    </div>
-
-    <table class="duplicate-table">
-      <thead>
-        <tr>
-          <th>رمز المادة</th>
-          <th>اسم المادة</th>
-          <th>الكمية في 26386</th>
-          <th>الكمية في 26387</th>
-          <th>الإجمالي</th>
-          <th>ملاحظة</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="code-tag">187764</span></td>
-          <td>برايمر داخلي برو 20K</td>
-          <td><span class="qty-badge">210</span></td>
-          <td><span class="qty-badge">210</span></td>
-          <td>420 قطعة</td>
-          <td>⚠️ تكرار كامل</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="summary-box">
-      <h3>💡 ملاحظات اليوم 1/9/2026</h3>
-      <ul>
-        <li><span>🔸 مادة واحدة مكررة:</span> <span class="total-value">برايمر داخلي برو 20K</span></li>
-        <li><span>🔸 إجمالي الكمية المكررة:</span> <span class="total-value">420 قطعة (210+210)</span></li>
-        <li><span>🔸 القيمة المكررة:</span> <span class="total-value">5,775 $</span></li>
-        <li><span>🔸 فاتورة 26388 (دوراكس):</span> <span style="color:#27ae60; font-weight:700;">لا تكرار - مواد مختلفة تماماً</span></li>
-        <li><span>🔸 التوصية:</span> <span style="color:#e74c3c; font-weight:700;">إلغاء فاتورة 26386 ودمجها مع 26387</span></li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ============ ملخص عام ============ -->
-  <div class="day-section">
-    <div class="day-header" style="background: linear-gradient(135deg, #ff8c42, #ff6b35);">
-      <h2>📊 الملخص التنفيذي الشامل</h2>
-      <div class="badge" style="background: white; color: #ff6b35;">تقرير نهائي</div>
-    </div>
-
-    <div class="summary-box" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-color: #2a5298;">
-      <h3 style="color: #1e3c72;">🎯 النتائج الرئيسية</h3>
-      <ul>
-        <li><span>✅ إجمالي فواتير شركة فاوري:</span> <span class="total-value" style="color:#1e3c72;">16 فاتورة</span></li>
-        <li><span>✅ أيام بها فواتير متعددة:</span> <span class="total-value" style="color:#1e3c72;">3 أيام</span></li>
-        <li><span>✅ إجمالي المواد المكررة:</span> <span class="total-value">13 مادة</span></li>
-        <li><span>✅ أكبر تكرار من حيث الكمية:</span> <span class="total-value">برايمر داخلي برو 20K (420 قطعة)</span></li>
-        <li><span>✅ أكبر تكرار من حيث التنوع:</span> <span class="total-value">يوم 15/6 (12 مادة مكررة)</span></li>
-      </ul>
-    </div>
-
-    <div class="summary-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: #27ae60; margin-top:15px;">
-      <h3 style="color: #1e3c72;">🔍 المواد الأكثر تكراراً (قابلة للدمج)</h3>
-      <ul>
-        <li><span>🥇 برايمر داخلي برو 20K (187764):</span> <span class="total-value">3 مرات</span></li>
-        <li><span>🥈 برايمر خارجي جديد 20 كغ (187757):</span> <span class="total-value">2 مرات</span></li>
-        <li><span>🥉 سيلكون مات 20 kg ابيض (1418):</span> <span class="total-value">2 مرات</span></li>
-        <li><span>🏅 الترا داخلي 15 لتر مكس 1 (187722):</span> <span class="total-value">2 مرات</span></li>
-      </ul>
-    </div>
-
-    <div class="summary-box" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff8c42; margin-top:15px;">
-      <h3 style="color: #1e3c72;">💼 التوصيات الإدارية</h3>
-      <ul>
-        <li><span>📌 أولاً:</span> <span>توحيد إصدار الفواتير في نهاية اليوم لتجنب التكرار</span></li>
-        <li><span>📌 ثانياً:</span> <span>إنشاء قائمة موحدة واحدة لكل يوم مع شركة فاوري</span></li>
-        <li><span>📌 ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق إن أمكن</span></li>
-        <li><span>📌 رابعاً:</span> <span>تفعيل نظام تنبيه عند تكرار نفس الرمز في نفس اليوم</span></li>
-      </ul>
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <h3>جاري قراءة ملف فواتير الشراء...</h3>
+      <p style="color:#666; margin-top:10px;">يتم تحليل البيانات تلقائياً من المستودع</p>
     </div>
   </div>
 
   <div class="footer">
-    🎨 نظام التدقيق الذكي © 2026 | تم إعداد التقرير في: 06/10/2026<br>
-    <small>تصميم خاص بشركة فاوري - بألوان الدهانات المتدرجة 🎨</small>
+    🎨 نظام التدقيق الذكي © 2026 | تم التصميم بألوان شركة فاوري المتدرجة<br>
+    <small>يتم تحديث البيانات تلقائياً عند استبدال ملف Excel في المستودع</small>
   </div>
-
 </div>
+
+<script>
+// قراءة ملف Excel من نفس المسار
+async function loadExcel() {
+  try {
+    const response = await fetch('فواتير الشراء.xlsx');
+    if (!response.ok) throw new Error('فشل في تحميل الملف');
+    const arrayBuffer = await response.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+    return jsonData;
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
+
+// تحويل التاريخ من Excel serial أو نص إلى تاريخ
+function parseDate(dateVal) {
+  if (!dateVal) return null;
+  if (typeof dateVal === 'number') {
+    const excelEpoch = new Date(1899, 11, 30);
+    return new Date(excelEpoch.getTime() + dateVal * 86400000);
+  }
+  const str = String(dateVal).trim();
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatDisplayDate(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// تحليل البيانات
+function analyzeData(rows) {
+  // تخطي الصف الأول (العناوين)
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
+  
+  // فلاتر شركة فاوري
+  const faworiKeywords = ['فاوري', 'وسيط فاوري'];
+  
+  const invoices = [];
+  
+  dataRows.forEach(row => {
+    if (!row || row.length < 10) return;
+    const client = String(row[1] || '').trim();
+    const isFawori = faworiKeywords.some(k => client.includes(k));
+    if (!isFawori) return;
+    
+    const invoiceNum = row[2];
+    const time = row[3];
+    const dateVal = row[4];
+    const type = row[5];
+    const code = row[6];
+    const material = row[7];
+    const unit = row[8];
+    const qty = row[9];
+    const price = row[10];
+    const total = row[12];
+    
+    if (!dateVal || !material) return;
+    
+    const date = parseDate(dateVal);
+    if (!date) return;
+    
+    const dateKey = formatDate(date);
+    
+    // تجميع الفواتير
+    let inv = invoices.find(i => i.num === invoiceNum);
+    if (!inv) {
+      inv = {
+        num: invoiceNum,
+        time: time,
+        date: date,
+        dateKey: dateKey,
+        client: client,
+        items: [],
+        total: 0
+      };
+      invoices.push(inv);
+    }
+    
+    if (code && material && qty) {
+      inv.items.push({
+        code: String(code).trim(),
+        name: String(material).trim(),
+        qty: parseFloat(qty) || 0,
+        price: parseFloat(price) || 0,
+        total: parseFloat(total) || 0
+      });
+    }
+  });
+  
+  // تجميع حسب اليوم
+  const byDay = {};
+  invoices.forEach(inv => {
+    if (!byDay[inv.dateKey]) byDay[inv.dateKey] = [];
+    byDay[inv.dateKey].push(inv);
+  });
+  
+  return { invoices, byDay };
+}
+
+// البحث عن التكرارات في نفس اليوم
+function findDuplicates(invoices) {
+  const duplicates = [];
+  
+  for (let i = 0; i < invoices.length; i++) {
+    for (let j = i + 1; j < invoices.length; j++) {
+      const inv1 = invoices[i];
+      const inv2 = invoices[j];
+      
+      const common = [];
+      inv1.items.forEach(item1 => {
+        inv2.items.forEach(item2 => {
+          if (item1.code === item2.code && item1.name === item2.name) {
+            common.push({
+              code: item1.code,
+              name: item1.name,
+              qty1: item1.qty,
+              qty2: item2.qty,
+              total: item1.qty + item2.qty,
+              price1: item1.price,
+              price2: item2.price
+            });
+          }
+        });
+      });
+      
+      if (common.length > 0) {
+        duplicates.push({
+          inv1: inv1,
+          inv2: inv2,
+          items: common
+        });
+      }
+    }
+  }
+  
+  return duplicates;
+}
+
+// عرض النتائج
+function renderResults(data) {
+  const { invoices, byDay } = data;
+  const content = document.getElementById('content');
+  const dateInfo = document.getElementById('dateInfo');
+  
+  // تحديث معلومات التاريخ
+  const dates = Object.keys(byDay).sort();
+  if (dates.length > 0) {
+    const first = dates[0];
+    const last = dates[dates.length - 1];
+    dateInfo.textContent = `📅 الفترة: ${first} إلى ${last} | عدد فواتير فاوري: ${invoices.length}`;
+  }
+  
+  // حساب الإحصائيات
+  let totalInvoices = invoices.length;
+  let daysWithDuplicates = 0;
+  let totalDuplicateItems = 0;
+  let allDuplicates = [];
+  
+  const daysData = [];
+  
+  dates.forEach(dateKey => {
+    const dayInvoices = byDay[dateKey];
+    const dups = findDuplicates(dayInvoices);
+    
+    if (dups.length > 0) {
+      daysWithDuplicates++;
+      dups.forEach(d => {
+        totalDuplicateItems += d.items.length;
+        allDuplicates.push(d);
+      });
+    }
+    
+    daysData.push({
+      dateKey,
+      date: dayInvoices[0].date,
+      invoices: dayInvoices,
+      duplicates: dups
+    });
+  });
+  
+  let html = `
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="number">${totalInvoices}</div>
+        <div class="label">إجمالي فواتير فاوري</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="number">${daysWithDuplicates}</div>
+        <div class="label">أيام بها تكرار</div>
+      </div>
+      <div class="stat-card red">
+        <div class="number">${totalDuplicateItems}</div>
+        <div class="label">مواد مكررة</div>
+      </div>
+      <div class="stat-card green">
+        <div class="number">100%</div>
+        <div class="label">نسبة التدقيق</div>
+      </div>
+    </div>
+  `;
+  
+  // عرض كل يوم
+  daysData.forEach(day => {
+    const displayDate = formatDisplayDate(day.date);
+    const hasDups = day.duplicates.length > 0;
+    
+    html += `
+      <div class="day-section">
+        <div class="day-header">
+          <h2>📅 ${displayDate}</h2>
+          <div class="badge">${day.invoices.length} فاتورة</div>
+        </div>
+        
+        <div class="invoices-row">
+          ${day.invoices.map(inv => `
+            <div class="invoice-card">
+              <h4>🧾 فاتورة رقم ${inv.num}</h4>
+              <div class="info">
+                <div>⏰ الوقت: ${inv.time || '-'}</div>
+                <div>📦 عدد المواد: ${inv.items.length}</div>
+                <div> الإجمالي: ${inv.items.reduce((s,i)=>s+i.total,0).toLocaleString('en-US', {maximumFractionDigits:2})} $</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+    `;
+    
+    if (hasDups) {
+      day.duplicates.forEach(dup => {
+        html += `
+          <div class="duplicates-title">
+            <span class="alert-icon">!</span>
+            المواد المتكررة بين الفاتورتين ${dup.inv1.num} و ${dup.inv2.num}
+          </div>
+          <div class="table-wrapper">
+            <table class="duplicate-table">
+              <thead>
+                <tr>
+                  <th>رمز المادة</th>
+                  <th>اسم المادة</th>
+                  <th>الكمية في ${dup.inv1.num}</th>
+                  <th>الكمية في ${dup.inv2.num}</th>
+                  <th>الإجمالي</th>
+                  <th>ملاحظة</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dup.items.map(item => `
+                  <tr>
+                    <td><span class="code-tag">${item.code}</span></td>
+                    <td>${item.name}</td>
+                    <td><span class="qty-badge">${item.qty1}</span></td>
+                    <td><span class="qty-badge">${item.qty2}</span></td>
+                    <td>${item.total} قطعة</td>
+                    <td>⚠️ تكرار</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+    } else {
+      html += `<div class="no-duplicates">✅ لا توجد مواد مكررة في هذا اليوم</div>`;
+    }
+    
+    html += `</div>`;
+  });
+  
+  // الملخص التنفيذي
+  if (allDuplicates.length > 0) {
+    const materialCounts = {};
+    allDuplicates.forEach(d => {
+      d.items.forEach(item => {
+        if (!materialCounts[item.name]) materialCounts[item.name] = { count: 0, totalQty: 0, code: item.code };
+        materialCounts[item.name].count++;
+        materialCounts[item.name].totalQty += item.total;
+      });
+    });
+    
+    const sorted = Object.entries(materialCounts).sort((a,b) => b[1].count - a[1].count);
+    
+    html += `
+      <div class="day-section">
+        <div class="day-header" style="background: linear-gradient(135deg, #ff8c42, #ff6b35);">
+          <h2>📊 الملخص التنفيذي</h2>
+          <div class="badge" style="background: white; color: #ff6b35;">تقرير نهائي</div>
+        </div>
+        
+        <div class="summary-box" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-color: #2a5298;">
+          <h3>🎯 النتائج الرئيسية</h3>
+          <ul>
+            <li><span>✅ إجمالي فواتير شركة فاوري:</span> <span class="total-value" style="color:#1e3c72;">${totalInvoices}</span></li>
+            <li><span>✅ أيام بها تكرار:</span> <span class="total-value" style="color:#1e3c72;">${daysWithDuplicates}</span></li>
+            <li><span>✅ إجمالي المواد المكررة:</span> <span class="total-value">${totalDuplicateItems}</span></li>
+          </ul>
+        </div>
+        
+        <div class="summary-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: #27ae60; margin-top:15px;">
+          <h3> المواد الأكثر تكراراً</h3>
+          <ul>
+            ${sorted.slice(0, 5).map(([name, data], idx) => `
+              <li>
+                <span>${['🥇','🥈','🥉','4️⃣','5️⃣'][idx]} ${name} (${data.code}):</span>
+                <span class="total-value">${data.count} مرة | ${data.totalQty} قطعة</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+        
+        <div class="summary-box" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff8c42; margin-top:15px;">
+          <h3>💼 التوصيات الإدارية</h3>
+          <ul>
+            <li><span>📌 أولاً:</span> <span>توحيد إصدار الفواتير في نهاية اليوم</span></li>
+            <li><span> ثانياً:</span> <span>إنشاء قائمة موحدة واحدة لكل يوم</span></li>
+            <li><span>📌 ثالثاً:</span> <span>مراجعة المواد المكررة واسترجاع الفرق</span></li>
+            <li><span>📌 رابعاً:</span> <span>تفعيل نظام تنبيه عند التكرار</span></li>
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = html;
+}
+
+// بدء التطبيق
+async function init() {
+  try {
+    const rows = await loadExcel();
+    const data = analyzeData(rows);
+    renderResults(data);
+  } catch (error) {
+    document.getElementById('content').innerHTML = `
+      <div class="error-box">
+        <h2>❌ حدث خطأ في تحميل البيانات</h2>
+        <p style="margin-top:15px;">${error.message}</p>
+        <p style="margin-top:10px; color:#666;">تأكد من وجود ملف "فواتير الشراء.xlsx" في نفس مجلد index.html</p>
+      </div>
+    `;
+    document.getElementById('dateInfo').textContent = '⚠️ فشل في تحميل البيانات';
+  }
+}
+
+init();
+</script>
 </body>
 </html>
