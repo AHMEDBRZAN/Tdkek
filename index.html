@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>نظام فواتير الشراء - شركة فاوري</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -10,8 +13,8 @@
   body { background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#ff8c42 100%); min-height:100vh; padding:20px; color:#2c3e50; word-break:normal; }
   .container { max-width:1400px; margin:0 auto; }
 
-  /* ===== القاعدة الذهبية: كل خلايا الجدول بسطر واحد كامل ===== */
-  table.grid th, table.grid td { white-space:nowrap !important; }
+  /* ===== القاعدة الذهبية: كل خلايا كل الجداول بسطر واحد كامل ===== */
+  table.grid th, table.grid td, table.grid tfoot td { white-space:nowrap !important; }
   .qty-badge, .code-tag, .dup-flag, .chip, .badge, .invoice-num .num-value, .tool-btn { white-space:nowrap; }
   .cat-name, .invoice-info, .detail-info-item .val, .detail-info-item .lbl,
   .note-box, .iso-note, .section-title, .breadcrumb-item, .stat-card .label,
@@ -49,7 +52,6 @@
   .chip { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; padding:5px 12px; border-radius:14px; font-size:.82em; font-weight:700; box-shadow:0 4px 12px rgba(30,60,114,.3); display:inline-block; }
   .chip small { opacity:.8; font-weight:400; }
 
-  /* ===== حاوية الجدول: تمرير أفقي + عمودي، والجدول بعرض محتواه ===== */
   .table-wrap {
     overflow:auto;
     max-height:62vh;
@@ -64,7 +66,6 @@
   .table-wrap::-webkit-scrollbar-track, .list-scroll::-webkit-scrollbar-track { background:#eef2f7; border-radius:10px; }
   .table-wrap::-webkit-scrollbar-thumb, .list-scroll::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#ff8c42,#2a5298); border-radius:10px; }
 
-  /* الجدول يتمدد حسب المحتوى => لا قصّ ولا تكديس */
   table.grid { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; }
   table.grid thead th {
     position:sticky; top:0; z-index:4;
@@ -141,6 +142,7 @@
   @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .hidden { display:none !important; }
   .footer { text-align:center; color:#fff; padding:18px; font-size:.88em; text-shadow:0 2px 8px rgba(0,0,0,.3); }
+  .ver-tag { display:inline-block; background:rgba(255,255,255,.2); padding:3px 12px; border-radius:12px; margin-top:6px; font-size:.8em; }
 
   @media (max-width:768px){
     .header h1 { font-size:1.4em; }
@@ -168,7 +170,9 @@
   <div id="viewDup"></div>
   <div id="viewCats" class="hidden"></div>
 
-  <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يتحدث تلقائياً عند استبدال ملف Excel في المستودع</div>
+  <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يتحدث تلقائياً عند استبدال ملف Excel في المستودع<br>
+    <span class="ver-tag">الإصدار: v7 — فرض السطر الواحد على كل الجداول</span>
+  </div>
 </div>
 
 <script>
@@ -177,6 +181,13 @@ let catSortDesc=true, invSortDesc=true;
 let catView='tiles', invView='details';
 const VIEWS=['tiles','list','details','content'];
 const VIEW_LABELS={tiles:'🔲 بلاطات',list:'📃 قائمة',details:'📋 تفاصيل',content:'📊 جدول'};
+
+/* ===== الفرض البرمجي: سطر واحد لكل خلايا كل الجداول (يغلب أي CSS قديمة) ===== */
+function forceOneLine(){
+  document.querySelectorAll('table.grid th, table.grid td').forEach(el=>{
+    el.style.setProperty('white-space','nowrap','important');
+  });
+}
 
 function parseNum(v){ if(v===null||v===undefined||v==='')return 0; if(typeof v==='number')return v; const n=parseFloat(String(v).replace(/,/g,'').trim()); return isNaN(n)?0:n; }
 function parseDate(v){
@@ -261,7 +272,7 @@ function analyze(rows){
     c.latestKey=c.invoicesList.length?c.invoicesList[0].dateKey:'';
     c.latestDate=c.invoicesList.length?c.invoicesList[0].date:null;
     c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','🎨','','🏪','','🏗️','','','️','🔩','🚗','📦','🎯','🧪','🏬'][i%15];
+    c.icon=['🏢','🎨','🏭','🏪','🧰','🏗️','🛒','','🖌️','🔩','🚗','📦','🎯','🧪','🏬'][i%15];
     return c;
   }).sort((a,b)=>b.total-a.total);
   return {categories};
@@ -371,6 +382,7 @@ function renderDup(){
     });
   }
   document.getElementById('viewDup').innerHTML=html;
+  forceOneLine();
 }
 
 /* ===== الأصناف ===== */
@@ -446,6 +458,7 @@ function renderCats(){
 
   html+=`</div>`;
   document.getElementById('viewCats').innerHTML=html;
+  forceOneLine();
 }
 
 /* ===== فواتير الصنف ===== */
@@ -549,6 +562,7 @@ function renderInvoices(){
   </div>`;
 
   document.getElementById('viewCats').innerHTML=html;
+  forceOneLine();
 }
 
 /* ===== تفاصيل الفاتورة ===== */
@@ -625,6 +639,7 @@ function renderInvoiceDetail(){
       <button class="back-btn" onclick="renderInvoices()">→ العودة لقائمة الفواتير</button>
     </div>`;
   document.getElementById('viewCats').innerHTML=html;
+  forceOneLine();
   window.scrollTo(0,0);
 }
 
