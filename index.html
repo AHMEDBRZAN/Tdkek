@@ -70,21 +70,8 @@
   .dup-flag { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; padding:3px 10px; border-radius:12px; font-size:.75em; font-weight:700; display:inline-block; }
   .total-value { font-weight:800; color:#e74c3c; }
 
-  .categories-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; }
-  .category-card { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:20px; padding:22px; cursor:pointer; transition:all .35s; box-shadow:0 10px 30px rgba(0,0,0,.15); border-right:6px solid #2a5298; }
-  .category-card:hover { transform:translateY(-7px); box-shadow:0 20px 40px rgba(0,0,0,.25); border-right-color:#ff8c42; }
-  .category-card .cat-icon { width:55px; height:55px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.7em; margin-bottom:12px; color:#fff; background:linear-gradient(135deg,#2a5298,#1e3c72); }
-  .category-card .cat-name { font-size:1.1em; font-weight:800; color:#1e3c72; margin-bottom:12px; }
-  .category-card .cat-stats { display:flex; justify-content:space-between; padding-top:10px; border-top:1px dashed #ddd; }
-  .category-card .stat-value { font-size:1.25em; font-weight:800; color:#ff8c42; }
-  .category-card .stat-label { font-size:.75em; color:#666; margin-top:2px; }
-
   .list-row { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:14px; padding:13px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.1); border-right:4px solid #2a5298; flex-wrap:wrap; transition:all .25s; }
   .list-row:hover { border-right-color:#ff8c42; transform:translateX(-4px); box-shadow:0 8px 22px rgba(0,0,0,.16); }
-
-  .tiles-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
-  .tile-card { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:18px; padding:18px; cursor:pointer; box-shadow:0 8px 22px rgba(0,0,0,.12); border-top:5px solid #ff8c42; text-align:center; transition:all .3s; }
-  .tile-card:hover { transform:translateY(-6px); box-shadow:0 15px 32px rgba(0,0,0,.2); }
 
   .invoice-item { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:18px; padding:16px 20px; cursor:pointer; transition:all .3s; box-shadow:0 8px 25px rgba(0,0,0,.12); display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center; border-right:5px solid #2a5298; margin-bottom:13px; }
   .invoice-item:hover { transform:translateX(-5px); border-right-color:#ff8c42; box-shadow:0 15px 35px rgba(0,0,0,.2); }
@@ -129,7 +116,6 @@
   .hidden { display:none !important; }
   .footer { text-align:center; color:#fff; padding:18px; font-size:.88em; text-shadow:0 2px 8px rgba(0,0,0,.3); }
   .ver-tag { display:inline-block; background:rgba(255,255,255,.2); padding:3px 12px; border-radius:12px; margin-top:6px; font-size:.8em; }
-  .err-details { background:#fff; border-radius:12px; padding:12px; margin-top:12px; font-size:.72em; color:#666; text-align:right; max-height:160px; overflow:auto; word-break:break-all; white-space:normal !important; }
 
   @media (max-width:768px){
     .header h1 { font-size:1.4em; }
@@ -158,19 +144,16 @@
   <div id="viewCats" class="hidden"></div>
 
   <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يقرأ مباشرة من ملف فواتير الشراء.xlsx في المستودع<br>
-    <span class="ver-tag">الإصدار: v10 — تغيير عرض تفاصيل الفاتورة</span>
+    <span class="ver-tag">الإصدار: v11 — عرضان (قائمة/جدول) + زر بالأعلى + بدون طفرة</span>
   </div>
 </div>
 
 <script>
-let APP=null, catLevel='cats', curCat=null, curInv=null;
+let APP=null, curCat=null, curInv=null;
 let catSortDesc=true, invSortDesc=true;
-let catView='tiles', invView='details';
-let detView='table', detSort='orig';
-const VIEWS=['tiles','list','details','content'];
-const VIEW_LABELS={tiles:'🔲 بلاطات',list:'📃 قائمة',details:'📋 تفاصيل',content:'📊 جدول'};
-const DET_VIEWS=['table','tiles','list','details'];
-const DET_LABELS={table:'📊 جدول',tiles:'🔲 بطاقات',list:'📃 قائمة',details:'📋 تفاصيل'};
+let catView='list', invView='list', detView='table', detSort='orig';
+const VIEWS=['list','table'];
+const VIEW_LABELS={list:'📃 قائمة',table:'📊 جدول'};
 const DET_SORTS=['orig','qty','total','name'];
 const DET_SORT_LABELS={orig:'الترتيب الأصلي',qty:'الكمية الأعلى',total:'الإجمالي الأعلى',name:'الاسم'};
 
@@ -204,7 +187,7 @@ async function loadExcel(){
       }catch(e){ tried.push(base+name+' → '+e.message); }
     }
   }
-  throw new Error('لم يتم العثور على ملف الفواتير في أي مسار.||المسارات المجربة:');
+  throw new Error('لم يتم العثور على ملف الفواتير في أي مسار.');
 }
 
 function parseNum(v){ if(v===null||v===undefined||v==='')return 0; if(typeof v==='number')return v; const n=parseFloat(String(v).replace(/,/g,'').trim()); return isNaN(n)?0:n; }
@@ -232,6 +215,13 @@ function forceOneLine(){
   document.querySelectorAll('table.grid th, table.grid td').forEach(el=>{
     el.style.setProperty('white-space','nowrap','important');
   });
+}
+
+/* ===== الحفاظ على مكان التمرير (حل طفرة الأعلى) ===== */
+function keepScroll(fn){
+  const y=window.scrollY;
+  fn();
+  window.scrollTo(0,y);
 }
 
 function analyze(rows){
@@ -283,7 +273,7 @@ function analyze(rows){
     c.latestKey=c.invoicesList.length?c.invoicesList[0].dateKey:'';
     c.latestDate=c.invoicesList.length?c.invoicesList[0].date:null;
     c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','','🏭','','🧰','️','🛒','','🖌️','','','','','🧪',''][i%15];
+    c.icon=['🏢','🎨','🏭','🏪','🧰','🏗️','🛒','','🖌️','🔩','','📦','','🧪',''][i%15];
     return c;
   }).sort((a,b)=>b.total-a.total);
   return {categories};
@@ -313,6 +303,7 @@ function switchTab(tab){
   document.getElementById('viewCats').classList.toggle('hidden', tab!=='cats');
   document.getElementById('tabDupBtn').className='tab-btn'+(tab==='dup'?' active':'');
   document.getElementById('tabCatsBtn').className='tab-btn'+(tab==='cats'?' active-blue':'');
+  window.scrollTo(0,0);
 }
 
 function toolbar(sec){
@@ -321,16 +312,23 @@ function toolbar(sec){
   const sortFn = sec==='cat'?'toggleCatSort()':'toggleInvSort()';
   const viewFn = sec==='cat'?'cycleCatView()':'cycleInvView()';
   return `<div class="toolbar fade-in">
-    <button class="tool-btn" onclick="${sortFn}">🔄 فرز: ${desc?'الأحدث أولاً':'الأقدم أولاً'}</button>
     <button class="tool-btn orange" onclick="${viewFn}">👁 العرض: ${VIEW_LABELS[view]}</button>
+    <button class="tool-btn" onclick="${sortFn}">🔄 فرز: ${desc?'الأحدث أولاً':'الأقدم أولاً'}</button>
   </div>`;
 }
-function toggleCatSort(){ catSortDesc=!catSortDesc; renderCats(); }
-function toggleInvSort(){ invSortDesc=!invSortDesc; renderInvoices(); }
-function cycleCatView(){ catView=VIEWS[(VIEWS.indexOf(catView)+1)%VIEWS.length]; renderCats(); }
-function cycleInvView(){ invView=VIEWS[(VIEWS.indexOf(invView)+1)%VIEWS.length]; renderInvoices(); }
-function cycleDetView(){ detView=DET_VIEWS[(DET_VIEWS.indexOf(detView)+1)%DET_VIEWS.length]; renderInvoiceDetail(); }
-function cycleDetSort(){ detSort=DET_SORTS[(DET_SORTS.indexOf(detSort)+1)%DET_SORTS.length]; renderInvoiceDetail(); }
+function detToolbar(){
+  return `<div class="toolbar fade-in">
+    <button class="tool-btn orange" onclick="cycleDetView()">👁 العرض: ${VIEW_LABELS[detView]}</button>
+    <button class="tool-btn" onclick="cycleDetSort()">🔄 فرز: ${DET_SORT_LABELS[detSort]}</button>
+  </div>`;
+}
+
+function toggleCatSort(){ keepScroll(()=>{ catSortDesc=!catSortDesc; renderCats(); }); }
+function toggleInvSort(){ keepScroll(()=>{ invSortDesc=!invSortDesc; renderInvoices(); }); }
+function cycleCatView(){ keepScroll(()=>{ catView=VIEWS[(VIEWS.indexOf(catView)+1)%VIEWS.length]; renderCats(); }); }
+function cycleInvView(){ keepScroll(()=>{ invView=VIEWS[(VIEWS.indexOf(invView)+1)%VIEWS.length]; renderInvoices(); }); }
+function cycleDetView(){ keepScroll(()=>{ detView=VIEWS[(VIEWS.indexOf(detView)+1)%VIEWS.length]; renderInvoiceDetail(); }); }
+function cycleDetSort(){ keepScroll(()=>{ detSort=DET_SORTS[(DET_SORTS.indexOf(detSort)+1)%DET_SORTS.length]; renderInvoiceDetail(); }); }
 
 function getDetItems(){
   let arr=[...curInv.items];
@@ -349,6 +347,7 @@ function filterInvs(q){
   document.querySelectorAll('.inv-item').forEach(el=>{ el.style.display=(el.dataset.search||'').toLowerCase().includes(q)?'':'none'; });
 }
 
+/* ===== قسم التشابه (معزول) ===== */
 function renderDup(){
   const days=APP.dupDays;
   const involved=new Set(); days.forEach(d=>d.invoices.forEach(i=>involved.add(d.category+'|'+i.num+'|'+i.dateKey)));
@@ -405,8 +404,9 @@ function renderDup(){
   forceOneLine();
 }
 
+/* ===== الأصناف: قائمة أو جدول ===== */
 function renderCats(){
-  catLevel='cats'; curCat=null; curInv=null;
+  curCat=null; curInv=null;
   const cats=[...APP.categories].sort((a,b)=>{
     const c=(a.latestKey||'').localeCompare(b.latestKey||'');
     if(c!==0) return catSortDesc? -c : c;
@@ -418,22 +418,8 @@ function renderCats(){
   html+=`<div class="search-box fade-in"><span style="font-size:1.2em;">🔍</span><input type="text" placeholder="ابحث عن صنف / شركة..." oninput="filterCards(this.value)"></div>`;
   html+=`<div class="fade-in">`;
 
-  if(catView==='tiles'){
-    html+=`<div class="categories-grid">`;
-    cats.forEach(cat=>{
-      html+=`<div class="category-card cat-item" data-name="${esc(cat.name)}" style="border-right-color:${cat.color}" onclick="${click(cat.name)}">
-        <div class="cat-icon" style="background:linear-gradient(135deg,${cat.color},${cat.color}cc)">${cat.icon}</div>
-        <div class="cat-name">${esc(cat.name)}</div>
-        <div class="cat-stats">
-          <div style="text-align:center"><div class="stat-value">${cat.invoicesCount}</div><div class="stat-label">فاتورة</div></div>
-          <div style="text-align:center"><div class="stat-value">${fmt(cat.itemsCount)}</div><div class="stat-label">مادة</div></div>
-          <div style="text-align:center"><div class="stat-value">${fmt(cat.total)}</div><div class="stat-label">الإجمالي</div></div>
-        </div>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-  else if(catView==='list'){
+  if(catView==='list'){
+    html+=`<div class="list-scroll">`;
     cats.forEach(cat=>{
       html+=`<div class="list-row cat-item" data-name="${esc(cat.name)}" onclick="${click(cat.name)}">
         <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.4em;">${cat.icon}</span><strong style="color:#1e3c72;">${esc(cat.name)}</strong></div>
@@ -444,21 +430,7 @@ function renderCats(){
         </div>
       </div>`;
     });
-  }
-  else if(catView==='details'){
-    cats.forEach(cat=>{
-      html+=`<div class="list-row cat-item" data-name="${esc(cat.name)}" onclick="${click(cat.name)}" style="align-items:flex-start;">
-        <div>
-          <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.4em;">${cat.icon}</span><strong style="color:#1e3c72;font-size:1.05em;">${esc(cat.name)}</strong></div>
-          <div style="color:#666;font-size:.83em;margin-top:6px;">📅 آخر فاتورة: ${cat.latestKey?fmtDate(cat.latestDate):'-'}</div>
-        </div>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;text-align:center;">
-          <div><div style="font-size:1.2em;font-weight:800;color:#ff8c42;">${cat.invoicesCount}</div><div style="font-size:.72em;color:#666;">فاتورة</div></div>
-          <div><div style="font-size:1.2em;font-weight:800;color:#ff8c42;">${fmt(cat.itemsCount)}</div><div style="font-size:.72em;color:#666;">مادة</div></div>
-          <div><div style="font-size:1.2em;font-weight:800;color:#e74c3c;">${fmt(cat.total)}</div><div style="font-size:.72em;color:#666;">الإجمالي</div></div>
-        </div>
-      </div>`;
-    });
+    html+=`</div>`;
   }
   else{
     html+=`<div class="table-wrap"><table class="grid">
@@ -480,9 +452,11 @@ function renderCats(){
   forceOneLine();
 }
 
+/* ===== فواتير الصنف: قائمة أو جدول ===== */
 function openCategory(name){
-  curCat=APP.categories.find(c=>c.name===name); catLevel='invoices'; curInv=null;
+  curCat=APP.categories.find(c=>c.name===name); curInv=null;
   renderInvoices();
+  window.scrollTo(0,0);
 }
 function renderInvoices(){
   const dupSet=APP.dupSet;
@@ -497,7 +471,7 @@ function renderInvoices(){
 
   let html=`
     <div class="breadcrumb">
-      <span class="breadcrumb-item" onclick="renderCats()">🏠 الأصناف</span>
+      <span class="breadcrumb-item" onclick="navCats()">🏠 الأصناف</span>
       <span class="breadcrumb-sep">›</span>
       <span class="breadcrumb-item active">${curCat.icon} ${esc(curCat.name)}</span>
     </div>`;
@@ -505,7 +479,7 @@ function renderInvoices(){
   html+=`<div class="search-box fade-in"><span style="font-size:1.2em;">🔍</span><input type="text" placeholder="ابحث برقم الفاتورة أو التاريخ..." oninput="filterInvs(this.value)"></div>`;
   html+=`<div class="fade-in">`;
 
-  if(invView==='details'){
+  if(invView==='list'){
     html+=`<div class="list-scroll">`;
     invs.forEach(inv=>{
       const isDup=dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
@@ -524,42 +498,13 @@ function renderInvoices(){
     });
     html+=`</div>`;
   }
-  else if(invView==='list'){
-    html+=`<div class="list-scroll">`;
-    invs.forEach(inv=>{
-      html+=`<div class="list-row inv-item" data-search="${esc(sdata(inv)).toLowerCase()}" onclick="${open(inv)}">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <span class="invoice-num" style="padding:6px 14px;min-width:75px;"><span class="num-value" style="font-size:1em;">${inv.num}</span></span>
-          <span style="color:#666;font-size:.87em;">📅 ${fmtDate(inv.date)} ${inv.time?'| ⏰ '+inv.time:''}</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <span class="chip">📦 ${inv.items.length}</span>
-          <span class="total-value">${fmt(itot(inv))}</span>
-        </div>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-  else if(invView==='tiles'){
-    html+=`<div class="list-scroll"><div class="tiles-grid">`;
-    invs.forEach(inv=>{
-      const isDup=dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
-      html+=`<div class="tile-card inv-item" data-search="${esc(sdata(inv)).toLowerCase()}" onclick="${open(inv)}">
-        <div style="font-size:1.4em;font-weight:800;color:#1e3c72;">🧾 ${inv.num}</div>
-        <div style="color:#666;font-size:.84em;margin:8px 0;">📅 ${fmtDate(inv.date)}<br>⏰ ${inv.time||'-'}</div>
-        <span class="chip">📦 ${inv.items.length} مادة</span>
-        <div class="total-value" style="margin-top:10px;font-size:1.15em;">${fmt(itot(inv))}</div>
-        ${isDup?`<div style="margin-top:8px;"><span class="dup-flag">⚠️ تشابه</span></div>`:''}
-      </div>`;
-    });
-    html+=`</div></div>`;
-  }
   else{
     html+=`<div class="table-wrap"><table class="grid">
       <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الوقت</th><th>عدد المواد</th><th>منظم الفاتورة</th><th>البيان</th><th>الإجمالي</th></tr></thead><tbody>`;
     invs.forEach(inv=>{
+      const isDup=dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
       html+=`<tr class="inv-item" data-search="${esc(sdata(inv)).toLowerCase()}" style="cursor:pointer;" onclick="${open(inv)}">
-        <td><strong>${inv.num}</strong></td>
+        <td><strong>${inv.num}</strong> ${isDup?'<span class="dup-flag">⚠️</span>':''}</td>
         <td>${fmtDate(inv.date)}</td>
         <td>${inv.time||'-'}</td>
         <td>${inv.items.length}</td>
@@ -583,9 +528,11 @@ function renderInvoices(){
   forceOneLine();
 }
 
+/* ===== تفاصيل الفاتورة: زر العرض بالأعلى + قائمة أو جدول ===== */
 function openInvoice(num,dateKey){
-  curInv=curCat.invoicesList.find(i=>i.num==num&&i.dateKey===dateKey); catLevel='invoice';
+  curInv=curCat.invoicesList.find(i=>i.num==num&&i.dateKey===dateKey);
   renderInvoiceDetail();
+  window.scrollTo(0,0);
 }
 function renderInvoiceDetail(){
   const inv=curInv;
@@ -597,12 +544,17 @@ function renderInvoiceDetail(){
 
   let html=`
     <div class="breadcrumb">
-      <span class="breadcrumb-item" onclick="renderCats()">🏠 الأصناف</span>
+      <span class="breadcrumb-item" onclick="navCats()">🏠 الأصناف</span>
       <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item" onclick="renderInvoices()">${curCat.icon} ${esc(curCat.name)}</span>
+      <span class="breadcrumb-item" onclick="navInvs()">${curCat.icon} ${esc(curCat.name)}</span>
       <span class="breadcrumb-sep">›</span>
       <span class="breadcrumb-item active">فاتورة ${inv.num}</span>
-    </div>
+    </div>`;
+
+  /* شريط الأدوات في الأعلى */
+  html+=detToolbar();
+
+  html+=`
     <div class="detail-header fade-in">
       <div class="inv-title">🧾 فاتورة رقم ${inv.num}</div>
       <div class="detail-info-grid">
@@ -615,11 +567,6 @@ function renderInvoiceDetail(){
       </div>
       ${inv.note?`<div class="note-box" style="background:rgba(255,255,255,.15);color:#fff;border-color:#ff8c42">📝 البيان: ${esc(inv.note)}</div>`:''}
       ${APP.dupSet.has(dupKey)?`<button class="link-btn" onclick="switchTab('dup')">⚠️ عرض هذه الفاتورة في قسم التشابه</button>`:''}
-    </div>
-
-    <div class="toolbar fade-in">
-      <button class="tool-btn orange" onclick="cycleDetView()">👁 العرض: ${DET_LABELS[detView]}</button>
-      <button class="tool-btn" onclick="cycleDetSort()">🔄 فرز: ${DET_SORT_LABELS[detSort]}</button>
     </div>`;
 
   if(detView==='table'){
@@ -663,81 +610,39 @@ function renderInvoiceDetail(){
       </div>
     </div>`;
   }
-  else if(detView==='tiles'){
-    html+=`<div class="tiles-grid fade-in">`+items.map(it=>`
-      <div class="tile-card" style="text-align:right;cursor:default;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span class="code-tag">${it.code}</span>
-          <span class="qty-badge">${fmt(it.qty)}</span>
-        </div>
-        <div style="font-weight:800;color:#1e3c72;margin:10px 0;">${esc(it.name)}</div>
-        <div style="display:flex;justify-content:space-between;font-size:.83em;color:#666;flex-wrap:wrap;gap:4px;">
-          <span>الإفرادي: ${fmt(it.price)}</span><span>المبيع: ${fmt(it.sale)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-          <strong style="color:#ff8c42;font-size:1.05em;">${fmt(it.total)}</strong>
-          <span style="font-size:.8em;color:#666;">${esc(it.unit)||'قطعة'}</span>
-        </div>
-        ${it.note?`<div class="note-box" style="margin-top:8px;">📝 ${esc(it.note)}</div>`:''}
-      </div>`).join('')+`</div>
-      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
-        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
-      </div>`;
-  }
-  else if(detView==='list'){
-    html+=`<div class="list-scroll fade-in">`+items.map((it,idx)=>`
-      <div class="list-row" style="cursor:default;">
+  else{
+    html+=`<div class="list-scroll fade-in">`;
+    items.forEach((it,idx)=>{
+      html+=`<div class="list-row" style="cursor:default;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="color:#999;font-weight:700;">${idx+1}</span>
           <span class="code-tag">${it.code}</span>
           <strong style="color:#1e3c72;">${esc(it.name)}</strong>
+          ${it.note?`<span style="color:#856404;font-size:.8em;">📝 ${esc(it.note)}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="qty-badge">${fmt(it.qty)}</span>
           <span class="total-value">${fmt(it.total)}</span>
         </div>
-      </div>`).join('')+`</div>
-      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
-        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
       </div>`;
-  }
-  else{
-    html+=`<div class="fade-in">`+items.map((it,idx)=>`
-      <div class="section-box" style="padding:16px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span class="code-tag">#${idx+1} | ${it.code}</span>
-            <strong style="color:#1e3c72;font-size:1.05em;">${esc(it.name)}</strong>
-          </div>
-          <span class="qty-badge">${fmt(it.qty)} ${esc(it.unit)||'قطعة'}</span>
-        </div>
-        <div class="detail-info-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
-          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">السعر الافرادي</div><div class="val" style="color:#1e3c72;">${fmt(it.price)}</div></div>
-          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">سعر المبيع</div><div class="val" style="color:#1e3c72;">${fmt(it.sale)}</div></div>
-          <div class="detail-info-item" style="background:#fff5eb;"><div class="lbl" style="color:#666;">السعر الاجمالي</div><div class="val" style="color:#ff8c42;">${fmt(it.total)}</div></div>
-          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">الحسم</div><div class="val" style="color:#1e3c72;">${fmt(it.disc)}</div></div>
-          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">قيمة الحسم</div><div class="val" style="color:#1e3c72;">${fmt(it.discVal)}</div></div>
-          <div class="detail-info-item" style="background:#e8f5e9;"><div class="lbl" style="color:#666;">السعر النهائي</div><div class="val" style="color:#27ae60;">${fmt(it.final)}</div></div>
-        </div>
-        ${it.note?`<div class="note-box">📝 البيان: ${esc(it.note)}</div>`:''}
-      </div>`).join('')+`</div>
-      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
-        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
-        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
-      </div>`;
+    });
+    html+=`</div>
+    <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
+      <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
+      <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
+      <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
+    </div>`;
   }
 
-  html+=`<div style="margin-top:18px;"><button class="back-btn" onclick="renderInvoices()">→ العودة لقائمة الفواتير</button></div>`;
+  html+=`<div style="margin-top:18px;"><button class="back-btn" onclick="navInvs()">→ العودة لقائمة الفواتير</button></div>`;
 
   document.getElementById('viewCats').innerHTML=html;
   forceOneLine();
-  window.scrollTo(0,0);
 }
+
+/* ===== تنقل مع صعود للأعلى فقط عند فتح صفحة جديدة ===== */
+function navCats(){ renderCats(); window.scrollTo(0,0); }
+function navInvs(){ renderInvoices(); window.scrollTo(0,0); }
 
 async function init(){
   try{
@@ -752,12 +657,7 @@ async function init(){
     renderCats();
     switchTab('dup');
   }catch(e){
-    const parts=String(e.message).split('||');
-    document.getElementById('viewDup').innerHTML=`<div class="loading">
-      <h2>❌ ${parts[0]}</h2>
-      <p style="margin-top:10px;color:#666;">${parts[1]||''}</p>
-      <button class="back-btn" onclick="init()" style="margin-top:18px;">🔄 إعادة المحاولة</button>
-    </div>`;
+    document.getElementById('viewDup').innerHTML=`<div class="loading"><h2>❌ فشل تحميل الملف</h2><p>${e.message}</p><button class="back-btn" onclick="init()" style="margin-top:18px;">🔄 إعادة المحاولة</button></div>`;
     document.getElementById('periodInfo').textContent='⚠️ فشل تحميل البيانات';
   }
 }
