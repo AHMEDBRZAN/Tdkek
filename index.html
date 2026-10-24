@@ -4,645 +4,499 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>نظام فواتير الشراء - شركة فاوري</title>
+<title>فاوري | نظام فواتير الشراء</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Tahoma,sans-serif; }
-  body { background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#ff8c42 100%); min-height:100vh; padding:20px; color:#2c3e50; word-break:normal; }
-  .container { max-width:1400px; margin:0 auto; }
+:root{
+  --blue:#0E3A66; --blue-2:#155089; --blue-3:#0A2A4A;
+  --orange:#F58220; --orange-2:#D95D00;
+  --bg:#EEF2F7; --card:#FFFFFF; --line:#E3E9F0;
+  --text:#16283C; --muted:#5A6B7E;
+  --warn:#B26A00; --danger:#C62828; --ok:#1E8E5A;
+  --r:14px; --shadow:0 6px 22px rgba(14,58,102,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo','Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;word-break:normal}
+button{font-family:inherit}
+svg{flex:none}
 
-  table.grid th, table.grid td, table.grid tfoot td { white-space:nowrap !important; }
-  .qty-badge, .code-tag, .dup-flag, .chip, .badge, .invoice-num .num-value, .tool-btn { white-space:nowrap; }
-  .cat-name, .invoice-info, .detail-info-item .val, .detail-info-item .lbl,
-  .note-box, .iso-note, .section-title, .breadcrumb-item, .stat-card .label,
-  .header h1, .header .subtitle, .no-dup, .list-row, .tile-card {
-    white-space:normal; word-break:normal; overflow-wrap:break-word;
-  }
+/* ===== الشريط العلوي + الشعار ===== */
+.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--blue-3),var(--blue));color:#fff;padding:12px 22px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 18px rgba(10,42,74,.35);flex-wrap:wrap}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.brand-name{font-size:1.35em;font-weight:900;line-height:1.1}
+.brand-sub{font-size:.62em;letter-spacing:2px;opacity:.75;font-weight:600}
+.topbar-title{flex:1;min-width:200px;text-align:center;font-size:.92em;font-weight:600;opacity:.92}
+.topbar-info{font-size:.78em;opacity:.8;font-weight:600}
 
-  .header { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:25px; padding:22px 30px; box-shadow:0 20px 60px rgba(0,0,0,.3); margin-bottom:20px; text-align:center; border:2px solid rgba(255,255,255,.5); }
-  .header h1 { background:linear-gradient(135deg,#1e3c72,#ff8c42); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:2em; font-weight:800; margin-bottom:6px; }
-  .header .subtitle { color:#666; font-size:.95em; }
+/* ===== التبويبات ===== */
+.seg{display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:4px;margin:20px auto;max-width:560px;box-shadow:var(--shadow)}
+.seg button{flex:1;border:none;background:transparent;padding:11px 14px;border-radius:9px;font-size:.95em;font-weight:800;color:var(--muted);cursor:pointer;transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
+.seg button.on{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(14,58,102,.3)}
+.seg button:not(.on):hover{background:#F2F6FA;color:var(--blue)}
 
-  .tabs { display:flex; gap:12px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
-  .tab-btn { padding:14px 30px; border:none; border-radius:20px; font-size:1.02em; font-weight:800; cursor:pointer; transition:all .3s; background:rgba(255,255,255,.92); color:#1e3c72; box-shadow:0 8px 25px rgba(0,0,0,.18); }
-  .tab-btn:hover { transform:translateY(-3px); }
-  .tab-btn.active { background:linear-gradient(135deg,#ff8c42,#ff6b35); color:#fff; box-shadow:0 10px 30px rgba(255,107,53,.45); }
-  .tab-btn.active-blue { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; box-shadow:0 10px 30px rgba(42,82,152,.45); }
+.wrap{max-width:1280px;margin:0 auto;padding:0 18px 40px}
 
-  .toolbar { display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; }
-  .tool-btn { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; border:none; padding:11px 20px; border-radius:14px; font-weight:700; cursor:pointer; font-size:.9em; box-shadow:0 5px 15px rgba(42,82,152,.35); transition:all .25s; display:flex; align-items:center; gap:8px; }
-  .tool-btn:hover { transform:translateY(-2px); }
-  .tool-btn.orange { background:linear-gradient(135deg,#ff8c42,#ff6b35); box-shadow:0 5px 15px rgba(255,107,53,.35); }
+/* ===== بطاقات الإحصاء ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--orange)}
+.kpi.b::before{background:var(--blue-2)} .kpi.g::before{background:var(--ok)} .kpi.r::before{background:var(--danger)}
+.kpi .v{font-size:1.7em;font-weight:900;color:var(--blue);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:.8em;color:var(--muted);font-weight:700;margin-top:2px}
 
-  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:22px; }
-  .stat-card { background:rgba(255,255,255,.96); border-radius:20px; padding:18px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.15); border-top:5px solid #ff8c42; transition:transform .3s; }
-  .stat-card:hover { transform:translateY(-4px); }
-  .stat-card .number { font-size:2.2em; font-weight:800; background:linear-gradient(135deg,#1e3c72,#ff8c42); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .stat-card .label { color:#555; font-size:.9em; margin-top:6px; font-weight:600; }
+/* ===== اللوحات ===== */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.panel-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#FBFCFE,#F5F8FB)}
+.panel-head h2{font-size:1.05em;font-weight:900;color:var(--blue)}
+.panel-head .sub{font-size:.8em;color:var(--muted);font-weight:600}
+.panel-body{padding:18px 20px}
 
-  .section-box { background:rgba(255,255,255,.97); border-radius:25px; padding:22px; margin-bottom:20px; box-shadow:0 15px 40px rgba(0,0,0,.2); }
-  .section-title { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:15px 20px; border-radius:16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:1.1em; font-weight:800; }
-  .section-title.red { background:linear-gradient(135deg,#e74c3c,#c0392b); }
-  .badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); padding:6px 15px; border-radius:20px; font-size:.8em; font-weight:700; color:#fff; }
-  .iso-note { background:linear-gradient(135deg,#fff3cd,#ffe69c); border-right:5px solid #ffc107; border-radius:14px; padding:12px 16px; margin-bottom:18px; color:#856404; font-size:.9em; font-weight:600; }
-  .inv-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-  .chip { background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; padding:5px 12px; border-radius:14px; font-size:.82em; font-weight:700; box-shadow:0 4px 12px rgba(30,60,114,.3); display:inline-block; }
-  .chip small { opacity:.8; font-weight:400; }
+/* ===== شريط الأدوات ===== */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:1px solid transparent;font-size:.86em;font-weight:800;cursor:pointer;transition:.2s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(14,58,102,.18)}
+.btn-p{background:var(--blue);color:#fff}
+.btn-o{background:var(--orange);color:#fff}
+.btn-g{background:#fff;color:var(--blue);border-color:var(--line)}
+.search{flex:1;min-width:200px;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--muted)}
+.search input{flex:1;border:none;outline:none;font-family:inherit;font-size:.9em;color:var(--text);background:transparent}
 
-  .table-wrap { overflow:auto; max-height:62vh; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.1); margin-bottom:10px; background:#fff; -webkit-overflow-scrolling:touch; }
-  .list-scroll { max-height:70vh; overflow-y:auto; padding:4px 8px 4px 4px; -webkit-overflow-scrolling:touch; }
-  .table-wrap::-webkit-scrollbar, .list-scroll::-webkit-scrollbar { width:9px; height:9px; }
-  .table-wrap::-webkit-scrollbar-track, .list-scroll::-webkit-scrollbar-track { background:#eef2f7; border-radius:10px; }
-  .table-wrap::-webkit-scrollbar-thumb, .list-scroll::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#ff8c42,#2a5298); border-radius:10px; }
+/* ===== مسار التنقل ===== */
+.crumbs{display:flex;align-items:center;gap:7px;font-size:.83em;font-weight:700;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.crumbs a{color:var(--blue-2);cursor:pointer}
+.crumbs a:hover{text-decoration:underline}
+.crumbs .sep{color:#B7C4D2}
+.crumbs .cur{color:var(--orange-2)}
 
-  table.grid { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; }
-  table.grid thead th { position:sticky; top:0; z-index:4; background:linear-gradient(135deg,#2a5298,#1e3c72); color:#fff; padding:12px 14px; text-align:right; font-weight:700; font-size:.88em; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-  table.grid td { padding:10px 14px; border-bottom:1px solid #eef2f7; font-size:.9em; }
-  table.grid tbody tr { background:#fff; transition:background .2s; }
-  table.grid tbody tr:hover { background:#fff5eb; }
-  table.grid tbody tr:last-child td { border-bottom:none; }
-  table.grid tfoot td { position:sticky; bottom:0; z-index:3; background:linear-gradient(135deg,#fff5eb,#ffe8d6); font-weight:800; color:#1e3c72; border-top:2px solid #ff8c42; }
+/* ===== الجداول ===== */
+.tbl-wrap{overflow:auto;max-height:62vh;border:1px solid var(--line);border-radius:12px;background:#fff;-webkit-overflow-scrolling:touch}
+.tbl-wrap::-webkit-scrollbar,.list-scroll::-webkit-scrollbar{width:9px;height:9px}
+.tbl-wrap::-webkit-scrollbar-track,.list-scroll::-webkit-scrollbar-track{background:#F0F4F8}
+.tbl-wrap::-webkit-scrollbar-thumb,.list-scroll::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--orange),var(--blue-2));border-radius:8px}
+table.tbl{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0}
+table.tbl th,table.tbl td{white-space:nowrap !important}
+table.tbl thead th{position:sticky;top:0;z-index:4;background:var(--blue);color:#fff;padding:11px 14px;text-align:right;font-size:.78em;font-weight:800;letter-spacing:.3px}
+table.tbl td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:.86em;font-variant-numeric:tabular-nums}
+table.tbl tbody tr:nth-child(even){background:#F7FAFC}
+table.tbl tbody tr:hover{background:#FFF4E8}
+table.tbl tbody tr:last-child td{border-bottom:none}
+table.tbl tr.dup td:first-child{border-right:3px solid var(--orange)}
+table.tbl tfoot td{position:sticky;bottom:0;z-index:3;background:#FDF3E7;font-weight:900;color:var(--blue);border-top:2px solid var(--orange)}
+td.num{font-weight:800}
+td.code{color:var(--blue-2);font-weight:800;letter-spacing:.5px}
+td.warn{color:var(--warn);font-weight:800}
+td.note{color:var(--warn);font-weight:600}
 
-  .code-tag { background:linear-gradient(135deg,#e3f2fd,#bbdefb); color:#1565c0; padding:3px 9px; border-radius:8px; font-weight:700; font-size:.83em; display:inline-block; }
-  .qty-badge { background:linear-gradient(135deg,#ff8c42,#ff6b35); color:#fff; padding:3px 11px; border-radius:14px; font-weight:700; font-size:.83em; display:inline-block; }
-  .dup-flag { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; padding:3px 10px; border-radius:12px; font-size:.75em; font-weight:700; display:inline-block; }
-  .total-value { font-weight:800; color:#e74c3c; }
+/* ===== قائمة قابلة للتمرير ===== */
+.list-scroll{max-height:66vh;overflow-y:auto;padding:2px;-webkit-overflow-scrolling:touch}
 
-  .list-row { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:14px; padding:13px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.1); border-right:4px solid #2a5298; flex-wrap:wrap; transition:all .25s; }
-  .list-row:hover { border-right-color:#ff8c42; transform:translateX(-4px); box-shadow:0 8px 22px rgba(0,0,0,.16); }
+/* ===== بطاقات الأصناف ===== */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.cat-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:.22s;box-shadow:var(--shadow)}
+.cat-card:hover{transform:translateY(-4px);border-color:var(--orange);box-shadow:0 10px 26px rgba(245,130,32,.18)}
+.cat-av{width:46px;height:46px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25em;font-weight:900;flex:none}
+.cat-info{flex:1;min-width:0}
+.cat-name{font-weight:900;color:var(--blue);font-size:.98em;margin-bottom:3px}
+.cat-meta{font-size:.74em;color:var(--muted);font-weight:600}
+.cat-total{text-align:left;flex:none}
+.cat-total .v{font-weight:900;color:var(--orange-2);font-size:1em;font-variant-numeric:tabular-nums}
+.cat-total .l{font-size:.66em;color:var(--muted);font-weight:700}
 
-  .invoice-item { background:linear-gradient(135deg,#fff,#f8f9ff); border-radius:18px; padding:16px 20px; cursor:pointer; transition:all .3s; box-shadow:0 8px 25px rgba(0,0,0,.12); display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center; border-right:5px solid #2a5298; margin-bottom:13px; }
-  .invoice-item:hover { transform:translateX(-5px); border-right-color:#ff8c42; box-shadow:0 15px 35px rgba(0,0,0,.2); }
-  .invoice-num { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:12px 18px; border-radius:12px; text-align:center; min-width:95px; }
-  .invoice-num .num-label { font-size:.7em; opacity:.85; }
-  .invoice-num .num-value { font-size:1.25em; font-weight:800; }
-  .invoice-info { display:flex; flex-direction:column; gap:5px; font-size:.88em; }
-  .invoice-info .row { display:flex; gap:14px; flex-wrap:wrap; }
-  .invoice-info .label { color:#666; }
-  .invoice-info .value { color:#1e3c72; font-weight:700; }
-  .invoice-total { text-align:left; min-width:110px; }
-  .invoice-total .amount { font-size:1.35em; font-weight:800; color:#ff8c42; }
-  .invoice-total .currency { font-size:.75em; color:#666; }
+/* ===== صفوف الفواتير ===== */
+.inv-row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:11px;display:grid;grid-template-columns:86px 1fr auto;gap:16px;align-items:center;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
+.inv-row:hover{border-color:var(--orange);transform:translateX(-4px)}
+.inv-no{font-size:1.25em;font-weight:900;color:var(--blue);text-align:center;background:#F2F6FA;border-radius:10px;padding:8px 4px;font-variant-numeric:tabular-nums}
+.inv-l1{font-size:.88em;font-weight:800;color:var(--text)}
+.inv-l2{font-size:.76em;color:var(--muted);font-weight:600;margin-top:3px}
+.inv-note{font-size:.75em;color:var(--warn);font-weight:700;margin-top:4px}
+.inv-dup{font-size:.75em;color:var(--danger);font-weight:800;margin-top:4px;display:flex;align-items:center;gap:6px}
+.inv-sum{text-align:left}
+.inv-sum .v{font-size:1.1em;font-weight:900;color:var(--text);font-variant-numeric:tabular-nums}
+.inv-sum .l{font-size:.66em;color:var(--muted);font-weight:700}
 
-  .detail-header { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; border-radius:20px; padding:22px; margin-bottom:18px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
-  .detail-header .inv-title { font-size:1.6em; font-weight:800; margin-bottom:14px; }
-  .detail-info-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
-  .detail-info-item { background:rgba(255,255,255,.15); padding:10px 14px; border-radius:10px; }
-  .detail-info-item .lbl { font-size:.78em; opacity:.85; }
-  .detail-info-item .val { font-size:1em; font-weight:700; margin-top:3px; }
+/* ===== بطاقة معلومات الفاتورة ===== */
+.info-card{background:linear-gradient(135deg,var(--blue-3),var(--blue));color:#fff;border-radius:var(--r);padding:20px 22px;margin-bottom:16px;box-shadow:0 8px 24px rgba(10,42,74,.3)}
+.info-title{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.info-title .no{font-size:1.5em;font-weight:900}
+.info-title .tag{font-size:.72em;font-weight:700;opacity:.8;border:1px solid rgba(255,255,255,.35);padding:3px 10px;border-radius:8px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.info-item{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 13px}
+.info-item .l{font-size:.68em;opacity:.75;font-weight:700}
+.info-item .v{font-size:.92em;font-weight:800;margin-top:2px}
+.info-note{margin-top:12px;background:rgba(245,130,32,.18);border:1px solid rgba(245,130,32,.45);border-radius:10px;padding:9px 13px;font-size:.8em;font-weight:700}
 
-  .breadcrumb { background:rgba(255,255,255,.95); border-radius:15px; padding:10px 18px; margin-bottom:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; box-shadow:0 5px 15px rgba(0,0,0,.1); }
-  .breadcrumb-item { color:#555; cursor:pointer; padding:5px 12px; border-radius:9px; font-weight:700; font-size:.9em; transition:all .2s; }
-  .breadcrumb-item:hover { background:#f0f0f0; color:#1e3c72; }
-  .breadcrumb-item.active { color:#ff8c42; cursor:default; }
-  .breadcrumb-sep { color:#999; }
+/* ===== يوم التشابه ===== */
+.day-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;background:#FFF9F2;border-bottom:1px solid var(--line)}
+.day-date{font-weight:900;color:var(--blue);font-size:1em}
+.day-cat{color:var(--muted);font-size:.82em;font-weight:700;margin-right:10px}
+.day-inv{font-size:.78em;color:var(--muted);font-weight:700}
+.day-inv b{color:var(--orange-2)}
 
-  .search-box { background:#fff; border-radius:15px; padding:12px 18px; margin-bottom:18px; box-shadow:0 5px 15px rgba(0,0,0,.1); display:flex; gap:10px; align-items:center; }
-  .search-box input { flex:1; padding:11px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:.95em; outline:none; transition:border-color .3s; }
-  .search-box input:focus { border-color:#ff8c42; }
+.empty{background:#fff;border:1px dashed var(--line);border-radius:12px;padding:36px;text-align:center;color:var(--muted);font-weight:700}
+.ok-line{color:var(--ok);font-weight:800}
 
-  .no-dup { background:linear-gradient(135deg,#e8f5e9,#c8e6c9); border-radius:16px; padding:25px; text-align:center; color:#27ae60; font-weight:800; font-size:1.05em; }
-  .note-box { background:linear-gradient(135deg,#fff3cd,#ffe69c); border-right:4px solid #ffc107; border-radius:10px; padding:9px 13px; margin-top:8px; font-size:.85em; color:#856404; }
-  .link-btn { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; border:none; padding:9px 18px; border-radius:12px; font-weight:700; cursor:pointer; font-size:.85em; margin-top:10px; box-shadow:0 5px 15px rgba(231,76,60,.3); }
-  .back-btn { background:linear-gradient(135deg,#27ae60,#2ecc71); color:#fff; border:none; padding:10px 20px; border-radius:12px; font-weight:700; cursor:pointer; font-size:.9em; box-shadow:0 5px 15px rgba(39,174,96,.3); }
+.loading{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:50px;text-align:center;box-shadow:var(--shadow)}
+.spin{width:46px;height:46px;border:5px solid #E7EDF3;border-top:5px solid var(--orange);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fade{animation:fd .35s ease}
+@keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.hidden{display:none !important}
 
-  .loading { background:#fff; border-radius:20px; padding:40px; text-align:center; box-shadow:0 15px 40px rgba(0,0,0,.2); }
-  .spinner { width:55px; height:55px; border:6px solid #f3f3f3; border-top:6px solid #ff8c42; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 18px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .fade-in { animation:fadeIn .4s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .hidden { display:none !important; }
-  .footer { text-align:center; color:#fff; padding:18px; font-size:.88em; text-shadow:0 2px 8px rgba(0,0,0,.3); }
-  .ver-tag { display:inline-block; background:rgba(255,255,255,.2); padding:3px 12px; border-radius:12px; margin-top:6px; font-size:.8em; }
+.footer{background:var(--blue-3);color:#fff;padding:18px;text-align:center;font-size:.8em;font-weight:600;margin-top:30px}
+.footer .fl{display:inline-flex;align-items:center;gap:8px;opacity:.9}
 
-  @media (max-width:768px){
-    .header h1 { font-size:1.4em; }
-    .invoice-item { grid-template-columns:1fr; }
-    .invoice-total { text-align:right; }
-    .tab-btn, .tool-btn { width:100%; justify-content:center; }
-    .table-wrap { max-height:55vh; }
-    .list-scroll { max-height:60vh; }
-  }
+@media (max-width:768px){
+  .topbar{padding:10px 14px}
+  .topbar-title{order:3;width:100%;flex:none}
+  .inv-row{grid-template-columns:1fr;gap:10px}
+  .inv-no{display:inline-block;width:110px}
+  .inv-sum{text-align:right}
+  .seg button{font-size:.82em;padding:10px 6px}
+}
 </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <h1>🎨 نظام فواتير الشراء الذكي</h1>
-    <div class="subtitle">شركة فاوري | كشف التشابه + تصفح الأصناف والفواتير | <span id="periodInfo">جاري التحميل...</span></div>
+<header class="topbar">
+  <div class="logo-wrap">
+    <svg class="logo" viewBox="0 0 48 48" aria-label="شعار فاوري">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFA04D"/><stop offset="1" stop-color="#D95D00"/>
+      </linearGradient></defs>
+      <rect x="1" y="1" width="46" height="46" rx="12" fill="#0A2A4A"/>
+      <rect x="1" y="1" width="46" height="46" rx="12" fill="none" stroke="#F58220" stroke-width="1.4"/>
+      <path d="M24 9c0 0-10 11.5-10 17.5a10 10 0 0 0 20 0C34 20.5 24 9 24 9z" fill="url(#lg)"/>
+      <circle cx="20.6" cy="27" r="2.7" fill="#fff" opacity=".9"/>
+      <path d="M14 38h20" stroke="#F58220" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="brand-name">فاوري</div>
+      <div class="brand-sub">FAWORI PAINTS</div>
+    </div>
   </div>
+  <div class="topbar-title">نظام تدقيق وفواتير الشراء</div>
+  <div class="topbar-info" id="periodInfo">جاري التحميل...</div>
+</header>
 
-  <div class="tabs">
-    <button class="tab-btn active" id="tabDupBtn" onclick="switchTab('dup')">🔄 الأصناف المتشابهة في نفس اليوم</button>
-    <button class="tab-btn" id="tabCatsBtn" onclick="switchTab('cats')">📂 أصناف فواتير الشراء</button>
-  </div>
-
+<div class="wrap">
+  <nav class="seg">
+    <button id="segDup" class="on" onclick="switchTab('dup')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3l10 18H2z"/><path d="M12 10v4"/><path d="M12 17.5v.5"/></svg>
+      كشف التشابه
+    </button>
+    <button id="segCats" onclick="switchTab('cats')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      الأصناف والفواتير
+    </button>
+  </nav>
   <div id="viewDup"></div>
   <div id="viewCats" class="hidden"></div>
-
-  <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يقرأ مباشرة من ملف فواتير الشراء.xlsx في المستودع<br>
-    <span class="ver-tag">الإصدار: v11 — عرضان (قائمة/جدول) + زر بالأعلى + بدون طفرة</span>
-  </div>
 </div>
 
-<script>
-let APP=null, curCat=null, curInv=null;
-let catSortDesc=true, invSortDesc=true;
-let catView='list', invView='list', detView='table', detSort='orig';
-const VIEWS=['list','table'];
-const VIEW_LABELS={list:'📃 قائمة',table:'📊 جدول'};
-const DET_SORTS=['orig','qty','total','name'];
-const DET_SORT_LABELS={orig:'الترتيب الأصلي',qty:'الكمية الأعلى',total:'الإجمالي الأعلى',name:'الاسم'};
+<footer class="footer">
+  <span class="fl">
+    <svg width="20" height="20" viewBox="0 0 48 48"><rect x="1" y="1" width="46" height="46" rx="12" fill="#155089"/><path d="M24 9c0 0-10 11.5-10 17.5a10 10 0 0 0 20 0C34 20.5 24 9 24 9z" fill="#F58220"/></svg>
+    فاوري © 2026 — نظام تدقيق فواتير الشراء
+  </span>
+  <div style="opacity:.65;margin-top:4px">يتحدث تلقائياً عند استبدال ملف Excel في المستودع</div>
+</footer>
 
-const FILE_NAMES=[
-  'فواتير الشراء.xlsx',
-  encodeURI('فواتير الشراء.xlsx'),
-  'invoices.xlsx',
-  '\u200E\u2068فواتير الشراء\u2069.xlsx',
-  '\u200Eفواتير الشراء.xlsx',
-  'فواتير_الشراء.xlsx'
-];
-const BASES=[
-  '',
-  '/Tdkek/',
-  'https://raw.githubusercontent.com/AHMEDBRZAN/Tdkek/main/'
-];
+<script>
+let APP=null,curCat=null,curInv=null;
+let catSortDesc=true,invSortDesc=true,detSort='orig';
+let catView='list',invView='list',detView='table';
+const VIEWS=['list','table'];
+const VL={list:'قائمة',table:'جدول'};
+const SORTS=['orig','qty','total','name'];
+const SL={orig:'الأصل',qty:'الكمية',total:'الإجمالي',name:'الاسم'};
+const PAL=['#0E3A66','#F58220','#1E8E5A','#C62828','#6A4FBF','#0F7E8A','#B26A00','#41566E','#8E2F3C','#2C6FB0','#12867B','#A85D00','#5C6B7A','#D95D00','#155089'];
+const IC={
+ sort:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 5v14M8 19l-3-3M8 19l3-3M16 19V5M16 5l-3 3M16 5l3 3"/></svg>',
+ view:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M10 10v10"/></svg>',
+ search:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+ warn:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3l10 18H2z"/><path d="M12 10v4"/><path d="M12 17.5v.5"/></svg>'
+};
+
+const FILE_NAMES=['فواتير الشراء.xlsx',encodeURI('فواتير الشراء.xlsx'),'invoices.xlsx','\u200E\u2068فواتير الشراء\u2069.xlsx','\u200Eفواتير الشراء.xlsx','فواتير_الشراء.xlsx'];
+const BASES=['','/Tdkek/','https://raw.githubusercontent.com/AHMEDBRZAN/Tdkek/main/'];
 
 async function loadExcel(){
-  const tried=[];
-  for(const base of BASES){
-    for(const name of FILE_NAMES){
-      try{
-        const res=await fetch(base+name+'?t='+Date.now(), {cache:'no-store'});
-        if(res.ok){
-          const buf=await res.arrayBuffer();
-          const wb=XLSX.read(buf,{type:'array'});
-          window.USED_FILE=base+name;
-          return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-        }
-        tried.push(base+name+' → HTTP '+res.status);
-      }catch(e){ tried.push(base+name+' → '+e.message); }
-    }
+  for(const b of BASES)for(const n of FILE_NAMES){
+    try{
+      const r=await fetch(b+n+'?t='+Date.now(),{cache:'no-store'});
+      if(r.ok){const buf=await r.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});window.USED_FILE=b+n;return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});}
+    }catch(e){}
   }
-  throw new Error('لم يتم العثور على ملف الفواتير في أي مسار.');
+  throw new Error('تعذر العثور على ملف الفواتير في المستودع');
 }
-
-function parseNum(v){ if(v===null||v===undefined||v==='')return 0; if(typeof v==='number')return v; const n=parseFloat(String(v).replace(/,/g,'').trim()); return isNaN(n)?0:n; }
+function parseNum(v){if(v==null||v==='')return 0;if(typeof v==='number')return v;const n=parseFloat(String(v).replace(/,/g,'').trim());return isNaN(n)?0:n}
 function parseDate(v){
-  if(!v) return null;
-  if(v instanceof Date) return v;
-  if(typeof v==='number'){ const b=new Date(1899,11,30); return new Date(b.getFullYear(),b.getMonth(),b.getDate()+Math.floor(v)); }
-  const s=String(v).trim();
-  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
-  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/); if(m) return new Date(+m[3],+m[2]-1,+m[1]);
-  const d=new Date(s); return isNaN(d.getTime())?null:d;
+  if(!v)return null; if(v instanceof Date)return v;
+  if(typeof v==='number'){const b=new Date(1899,11,30);return new Date(b.getFullYear(),b.getMonth(),b.getDate()+Math.floor(v))}
+  const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  const d=new Date(s);return isNaN(d.getTime())?null:d;
 }
-function fmtTime(v){
-  if(!v && v!==0) return '';
-  if(v instanceof Date) return v.toTimeString().slice(0,8);
-  if(typeof v==='number'){ const s=Math.round(v*86400); return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(x=>String(x).padStart(2,'0')).join(':'); }
-  return String(v);
-}
-function fmtKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function fmtDate(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
-function fmt(n){ return Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2}); }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function forceOneLine(){
-  document.querySelectorAll('table.grid th, table.grid td').forEach(el=>{
-    el.style.setProperty('white-space','nowrap','important');
-  });
-}
-
-/* ===== الحفاظ على مكان التمرير (حل طفرة الأعلى) ===== */
-function keepScroll(fn){
-  const y=window.scrollY;
-  fn();
-  window.scrollTo(0,y);
-}
+function fmtTime(v){if(!v&&v!==0)return'';if(v instanceof Date)return v.toTimeString().slice(0,8);if(typeof v==='number'){const s=Math.round(v*86400);return[Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(x=>String(x).padStart(2,'0')).join(':')}return String(v)}
+function fmtKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDate(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()}
+function fmt(n){return Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2})}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function forceOneLine(){document.querySelectorAll('table.tbl th,table.tbl td').forEach(el=>el.style.setProperty('white-space','nowrap','important'))}
+function keepScroll(fn){const y=window.scrollY;fn();window.scrollTo(0,y)}
 
 function analyze(rows){
-  const cats={};
-  let cur={client:'',invNum:null,time:'',date:null,type:'',organizer:'',note:''};
+  const cats={};let cur={client:'',invNum:null,time:'',date:null,type:'',organizer:'',note:''};
   for(let i=0;i<rows.length;i++){
-    const r=rows[i]; if(!r||r.length<6) continue;
-    const c0=String(r[0]||'').trim(); if(c0==='#'||c0==='＃') continue;
+    const r=rows[i];if(!r||r.length<6)continue;
+    const c0=String(r[0]||'').trim();if(c0==='#'||c0==='＃')continue;
     const client=String(r[1]||'').trim();
     const invNum=(r[2]!==''&&r[2]!=null)?String(r[2]).trim():null;
-    const time=r[3]?fmtTime(r[3]):'';
-    const dateV=r[4];
-    const type=String(r[5]||'').trim();
-    const code=String(r[6]||'').trim();
-    const material=String(r[7]||'').trim();
-    const unit=String(r[8]||'').trim();
-    const qty=parseNum(r[9]), price=parseNum(r[10]), sale=parseNum(r[11]), total=parseNum(r[12]);
-    const disc=parseNum(r[13]), discVal=parseNum(r[14]), invDisc=parseNum(r[15]), fin=parseNum(r[16]);
-    const organizer=String(r[17]||'').trim();
-    const note=String(r[18]||'').trim();
-
-    if(invNum && invNum!==cur.invNum){
-      cur={client:client||cur.client, invNum, time:time||cur.time, date:cur.date, type:type||cur.type, organizer, note};
-      const d=parseDate(dateV); if(d) cur.date=d;
-    }else{
-      if(client) cur.client=client;
-      if(time) cur.time=time;
-      if(organizer) cur.organizer=organizer;
-      if(type) cur.type=type;
-      const d=parseDate(dateV); if(d) cur.date=d;
-    }
-    if(!code && !material) continue;
-    if(!cur.client || !cur.invNum || !cur.date) continue;
-
-    if(!cats[cur.client]) cats[cur.client]={name:cur.client,invoices:{},total:0,itemsCount:0};
-    const cat=cats[cur.client];
-    const dateKey=fmtKey(cur.date);
-    const invKey=cur.invNum+'_'+dateKey;
-    if(!cat.invoices[invKey]){
-      cat.invoices[invKey]={num:cur.invNum,date:cur.date,dateKey,time:cur.time,type:cur.type||'شراء',organizer:cur.organizer,note:cur.note,invDiscount:invDisc,items:[]};
-    }
-    const inv=cat.invoices[invKey];
-    inv.items.push({code,name:material,unit,qty,price,sale,total,disc,discVal,final:fin,note:(invNum?'':note)});
-    cat.total+=total; cat.itemsCount++;
+    const time=r[3]?fmtTime(r[3]):'';const dateV=r[4];const type=String(r[5]||'').trim();
+    const code=String(r[6]||'').trim(),material=String(r[7]||'').trim(),unit=String(r[8]||'').trim();
+    const qty=parseNum(r[9]),price=parseNum(r[10]),sale=parseNum(r[11]),total=parseNum(r[12]);
+    const disc=parseNum(r[13]),discVal=parseNum(r[14]),invDisc=parseNum(r[15]),fin=parseNum(r[16]);
+    const organizer=String(r[17]||'').trim(),note=String(r[18]||'').trim();
+    if(invNum&&invNum!==cur.invNum){cur={client:client||cur.client,invNum,time:time||cur.time,date:cur.date,type:type||cur.type,organizer,note};const d=parseDate(dateV);if(d)cur.date=d;}
+    else{if(client)cur.client=client;if(time)cur.time=time;if(organizer)cur.organizer=organizer;if(type)cur.type=type;const d=parseDate(dateV);if(d)cur.date=d;}
+    if(!code&&!material)continue;
+    if(!cur.client||!cur.invNum||!cur.date)continue;
+    if(!cats[cur.client])cats[cur.client]={name:cur.client,invoices:{},total:0,itemsCount:0};
+    const cat=cats[cur.client],dateKey=fmtKey(cur.date),invKey=cur.invNum+'_'+dateKey;
+    if(!cat.invoices[invKey])cat.invoices[invKey]={num:cur.invNum,date:cur.date,dateKey,time:cur.time,type:cur.type||'شراء',organizer:cur.organizer,note:cur.note,invDiscount:invDisc,items:[]};
+    cat.invoices[invKey].items.push({code,name:material,unit,qty,price,sale,total,disc,discVal,final:fin,note:(invNum?'':note)});
+    cat.total+=total;cat.itemsCount++;
   }
   const categories=Object.values(cats).map((c,i)=>{
-    c.invoicesList=Object.values(c.invoices).sort((a,b)=> b.date-a.date || String(b.num).localeCompare(String(a.num)));
+    c.invoicesList=Object.values(c.invoices).sort((a,b)=>b.date-a.date||String(b.num).localeCompare(String(a.num)));
     c.invoicesCount=c.invoicesList.length;
     c.latestKey=c.invoicesList.length?c.invoicesList[0].dateKey:'';
     c.latestDate=c.invoicesList.length?c.invoicesList[0].date:null;
-    c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','🎨','🏭','🏪','🧰','🏗️','🛒','','🖌️','🔩','','📦','','🧪',''][i%15];
+    c.color=PAL[i%PAL.length];c.letter=(c.name.trim().charAt(0)||'؟');
     return c;
   }).sort((a,b)=>b.total-a.total);
-  return {categories};
+  return{categories};
 }
-
 function computeDuplicates(categories){
   const days=[];
   categories.forEach(cat=>{
     const byDay={};
-    cat.invoicesList.forEach(inv=>{ (byDay[inv.dateKey]=byDay[inv.dateKey]||[]).push(inv); });
+    cat.invoicesList.forEach(inv=>{(byDay[inv.dateKey]=byDay[inv.dateKey]||[]).push(inv)});
     Object.entries(byDay).forEach(([dateKey,invs])=>{
-      if(invs.length<2) return;
+      if(invs.length<2)return;
       const map={};
       invs.forEach(inv=>inv.items.forEach(it=>{
-        if(!map[it.code]) map[it.code]={code:it.code,name:it.name,per:{}};
+        if(!map[it.code])map[it.code]={code:it.code,name:it.name,per:{}};
         map[it.code].per[inv.num]=(map[it.code].per[inv.num]||0)+it.qty;
       }));
       const dups=Object.values(map).filter(m=>Object.keys(m.per).length>1);
-      if(dups.length) days.push({dateKey,date:invs[0].date,category:cat.name,invoices:invs,dups});
+      if(dups.length)days.push({dateKey,date:invs[0].date,category:cat.name,invoices:invs,dups});
     });
   });
-  return days.sort((a,b)=> b.dateKey.localeCompare(a.dateKey));
+  return days.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
 }
-
-function switchTab(tab){
-  document.getElementById('viewDup').classList.toggle('hidden', tab!=='dup');
-  document.getElementById('viewCats').classList.toggle('hidden', tab!=='cats');
-  document.getElementById('tabDupBtn').className='tab-btn'+(tab==='dup'?' active':'');
-  document.getElementById('tabCatsBtn').className='tab-btn'+(tab==='cats'?' active-blue':'');
+function switchTab(t){
+  document.getElementById('viewDup').classList.toggle('hidden',t!=='dup');
+  document.getElementById('viewCats').classList.toggle('hidden',t!=='cats');
+  document.getElementById('segDup').classList.toggle('on',t==='dup');
+  document.getElementById('segCats').classList.toggle('on',t==='cats');
   window.scrollTo(0,0);
 }
-
-function toolbar(sec){
-  const desc = sec==='cat'?catSortDesc:invSortDesc;
-  const view = sec==='cat'?catView:invView;
-  const sortFn = sec==='cat'?'toggleCatSort()':'toggleInvSort()';
-  const viewFn = sec==='cat'?'cycleCatView()':'cycleInvView()';
-  return `<div class="toolbar fade-in">
-    <button class="tool-btn orange" onclick="${viewFn}">👁 العرض: ${VIEW_LABELS[view]}</button>
-    <button class="tool-btn" onclick="${sortFn}">🔄 فرز: ${desc?'الأحدث أولاً':'الأقدم أولاً'}</button>
-  </div>`;
-}
-function detToolbar(){
-  return `<div class="toolbar fade-in">
-    <button class="tool-btn orange" onclick="cycleDetView()">👁 العرض: ${VIEW_LABELS[detView]}</button>
-    <button class="tool-btn" onclick="cycleDetSort()">🔄 فرز: ${DET_SORT_LABELS[detSort]}</button>
-  </div>`;
-}
-
-function toggleCatSort(){ keepScroll(()=>{ catSortDesc=!catSortDesc; renderCats(); }); }
-function toggleInvSort(){ keepScroll(()=>{ invSortDesc=!invSortDesc; renderInvoices(); }); }
-function cycleCatView(){ keepScroll(()=>{ catView=VIEWS[(VIEWS.indexOf(catView)+1)%VIEWS.length]; renderCats(); }); }
-function cycleInvView(){ keepScroll(()=>{ invView=VIEWS[(VIEWS.indexOf(invView)+1)%VIEWS.length]; renderInvoices(); }); }
-function cycleDetView(){ keepScroll(()=>{ detView=VIEWS[(VIEWS.indexOf(detView)+1)%VIEWS.length]; renderInvoiceDetail(); }); }
-function cycleDetSort(){ keepScroll(()=>{ detSort=DET_SORTS[(DET_SORTS.indexOf(detSort)+1)%DET_SORTS.length]; renderInvoiceDetail(); }); }
-
+function toggleCatSort(){keepScroll(()=>{catSortDesc=!catSortDesc;renderCats()})}
+function toggleInvSort(){keepScroll(()=>{invSortDesc=!invSortDesc;renderInvoices()})}
+function cycleCatView(){keepScroll(()=>{catView=VIEWS[(VIEWS.indexOf(catView)+1)%2];renderCats()})}
+function cycleInvView(){keepScroll(()=>{invView=VIEWS[(VIEWS.indexOf(invView)+1)%2];renderInvoices()})}
+function cycleDetView(){keepScroll(()=>{detView=VIEWS[(VIEWS.indexOf(detView)+1)%2];renderInvoiceDetail()})}
+function cycleDetSort(){keepScroll(()=>{detSort=SORTS[(SORTS.indexOf(detSort)+1)%SORTS.length];renderInvoiceDetail()})}
 function getDetItems(){
-  let arr=[...curInv.items];
-  if(detSort==='qty') arr.sort((a,b)=>b.qty-a.qty);
-  else if(detSort==='total') arr.sort((a,b)=>b.total-a.total);
-  else if(detSort==='name') arr.sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
-  return arr;
+  let a=[...curInv.items];
+  if(detSort==='qty')a.sort((x,y)=>y.qty-x.qty);
+  else if(detSort==='total')a.sort((x,y)=>y.total-x.total);
+  else if(detSort==='name')a.sort((x,y)=>String(x.name).localeCompare(String(y.name),'ar'));
+  return a;
 }
+function filterCards(q){q=q.toLowerCase();document.querySelectorAll('.cat-card').forEach(el=>{el.style.display=(el.dataset.name||'').toLowerCase().includes(q)?'':'none'})}
+function filterInvs(q){q=q.toLowerCase();document.querySelectorAll('.inv-row,tr.inv-tr').forEach(el=>{el.style.display=(el.dataset.search||'').toLowerCase().includes(q)?'':'none'})}
 
-function filterCards(q){
-  q=q.toLowerCase();
-  document.querySelectorAll('.cat-item').forEach(el=>{ el.style.display=(el.dataset.name||'').toLowerCase().includes(q)?'':'none'; });
-}
-function filterInvs(q){
-  q=q.toLowerCase();
-  document.querySelectorAll('.inv-item').forEach(el=>{ el.style.display=(el.dataset.search||'').toLowerCase().includes(q)?'':'none'; });
-}
-
-/* ===== قسم التشابه (معزول) ===== */
+/* ========== قسم التشابه ========== */
 function renderDup(){
   const days=APP.dupDays;
-  const involved=new Set(); days.forEach(d=>d.invoices.forEach(i=>involved.add(d.category+'|'+i.num+'|'+i.dateKey)));
-  const totalDups=days.reduce((s,d)=>s+d.dups.length,0);
-  const totalQty=days.reduce((s,d)=>s+d.dups.reduce((x,m)=>x+Object.values(m.per).reduce((a,b)=>a+b,0),0),0);
-
-  let html=`
-  <div class="iso-note">🔒 هذا القسم <strong>معزول تماماً</strong> عن تفاصيل الفواتير — مخصص فقط لكشف المواد المتشابهة المكررة بين فواتير اليوم الواحد.</div>
-  <div class="stats-grid fade-in">
-    <div class="stat-card"><div class="number">${days.length}</div><div class="label">أيام بها تشابه</div></div>
-    <div class="stat-card"><div class="number">${involved.size}</div><div class="label">فواتير متداخلة</div></div>
-    <div class="stat-card"><div class="number">${totalDups}</div><div class="label">مادة متشابهة</div></div>
-    <div class="stat-card"><div class="number">${fmt(totalQty)}</div><div class="label">إجمالي الكميات المكررة</div></div>
-  </div>`;
-
-  if(!days.length){
-    html+=`<div class="no-dup">✅ لا توجد مواد متشابهة بين فواتير أي يوم</div>`;
-  }else{
-    days.forEach(day=>{
-      html+=`
-      <div class="section-box fade-in">
-        <div class="section-title red">
-          <span>⚠️ يوم ${fmtDate(day.date)} — ${esc(day.category)}</span>
-          <span class="badge">${day.invoices.length} فواتير | ${day.dups.length} مادة متشابهة</span>
-        </div>
-        <div class="inv-chips">
-          ${day.invoices.map(inv=>`<span class="chip">🧾 فاتورة ${inv.num} <small>(${inv.time||'-'})</small></span>`).join('')}
-        </div>
-        <div class="table-wrap">
-          <table class="grid">
-            <thead><tr>
-              <th>رمز المادة</th><th>اسم المادة</th>
-              ${day.invoices.map(inv=>`<th>الكمية في فاتورة ${inv.num}</th>`).join('')}
-              <th>مجموع الكميات</th><th>الحالة</th>
-            </tr></thead>
-            <tbody>
-            ${day.dups.map(m=>{
-              const qtys=Object.values(m.per);
-              return `<tr>
-                <td><span class="code-tag">${m.code}</span></td>
-                <td>${esc(m.name)}</td>
-                ${day.invoices.map(inv=>`<td>${m.per[inv.num]!==undefined?`<span class="qty-badge">${fmt(m.per[inv.num])}</span>`:'—'}</td>`).join('')}
-                <td><strong>${fmt(qtys.reduce((a,b)=>a+b,0))}</strong></td>
-                <td><span class="dup-flag">⚠️ مكرر</span></td>
-              </tr>`;
-            }).join('')}
-            </tbody>
-          </table>
-        </div>
+  const invSet=new Set();days.forEach(d=>d.invoices.forEach(i=>invSet.add(d.category+'|'+i.num+'|'+i.dateKey)));
+  const totD=days.reduce((s,d)=>s+d.dups.length,0);
+  const totQ=days.reduce((s,d)=>s+d.dups.reduce((x,m)=>x+Object.values(m.per).reduce((a,b)=>a+b,0),0),0);
+  let h=`<div class="fade">
+  <div class="panel">
+    <div class="panel-head"><h2>كشف المواد المتشابهة بين فواتير اليوم الواحد</h2><span class="sub">قسم تدقيق مستقل</span></div>
+    <div class="panel-body">
+      <div class="kpis">
+        <div class="kpi r"><div class="v">${days.length}</div><div class="l">أيام بها تشابه</div></div>
+        <div class="kpi b"><div class="v">${invSet.size}</div><div class="l">فواتير متداخلة</div></div>
+        <div class="kpi"><div class="v">${totD}</div><div class="l">مواد متشابهة</div></div>
+        <div class="kpi g"><div class="v">${fmt(totQ)}</div><div class="l">مجموع الكميات المكررة</div></div>
       </div>`;
-    });
-  }
-  document.getElementById('viewDup').innerHTML=html;
-  forceOneLine();
-}
-
-/* ===== الأصناف: قائمة أو جدول ===== */
-function renderCats(){
-  curCat=null; curInv=null;
-  const cats=[...APP.categories].sort((a,b)=>{
-    const c=(a.latestKey||'').localeCompare(b.latestKey||'');
-    if(c!==0) return catSortDesc? -c : c;
-    return b.total-a.total;
-  });
-  const click=n=>`openCategory('${n.replace(/'/g,"\\'")}')`;
-
-  let html=toolbar('cat');
-  html+=`<div class="search-box fade-in"><span style="font-size:1.2em;">🔍</span><input type="text" placeholder="ابحث عن صنف / شركة..." oninput="filterCards(this.value)"></div>`;
-  html+=`<div class="fade-in">`;
-
-  if(catView==='list'){
-    html+=`<div class="list-scroll">`;
-    cats.forEach(cat=>{
-      html+=`<div class="list-row cat-item" data-name="${esc(cat.name)}" onclick="${click(cat.name)}">
-        <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.4em;">${cat.icon}</span><strong style="color:#1e3c72;">${esc(cat.name)}</strong></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <span class="chip">🧾 ${cat.invoicesCount}</span>
-          <span class="chip">📦 ${fmt(cat.itemsCount)}</span>
-          <span class="total-value">${fmt(cat.total)}</span>
-        </div>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
+  if(!days.length){h+=`<div class="empty ok-line">لا توجد مواد متشابهة بين فواتير أي يوم</div>`;}
   else{
-    html+=`<div class="table-wrap"><table class="grid">
-      <thead><tr><th>الصنف</th><th>عدد الفواتير</th><th>عدد المواد</th><th>الإجمالي</th><th>آخر فاتورة</th></tr></thead><tbody>`;
-    cats.forEach(cat=>{
-      html+=`<tr class="cat-item" data-name="${esc(cat.name)}" style="cursor:pointer;" onclick="${click(cat.name)}">
-        <td><strong>${cat.icon} ${esc(cat.name)}</strong></td>
-        <td>${cat.invoicesCount}</td>
-        <td>${fmt(cat.itemsCount)}</td>
-        <td><strong>${fmt(cat.total)}</strong></td>
-        <td>${cat.latestKey?fmtDate(cat.latestDate):'-'}</td>
-      </tr>`;
+    days.forEach(day=>{
+      h+=`<div class="panel" style="margin-bottom:16px">
+        <div class="day-head">
+          <div><span class="day-date">${fmtDate(day.date)}</span><span class="day-cat">${esc(day.category)}</span></div>
+          <div class="day-inv">الفواتير: <b>${day.invoices.map(i=>i.num).join(' ، ')}</b></div>
+        </div>
+        <div class="tbl-wrap" style="border:none;border-radius:0;max-height:46vh">
+          <table class="tbl"><thead><tr>
+            <th>رمز المادة</th><th>المادة</th>
+            ${day.invoices.map(i=>`<th>فاتورة ${i.num}</th>`).join('')}
+            <th>مجموع الكميات</th><th>الحالة</th>
+          </tr></thead><tbody>
+          ${day.dups.map(m=>{const q=Object.values(m.per);return `<tr class="dup">
+            <td class="code">${m.code}</td><td>${esc(m.name)}</td>
+            ${day.invoices.map(i=>`<td class="num">${m.per[i.num]!==undefined?fmt(m.per[i.num]):'—'}</td>`).join('')}
+            <td class="num">${fmt(q.reduce((a,b)=>a+b,0))}</td><td class="warn">مكرر</td>
+          </tr>`}).join('')}
+          </tbody></table>
+        </div></div>`;
     });
-    html+=`</tbody></table></div>`;
   }
-
-  html+=`</div>`;
-  document.getElementById('viewCats').innerHTML=html;
-  forceOneLine();
+  h+=`</div></div></div>`;
+  document.getElementById('viewDup').innerHTML=h;forceOneLine();
 }
 
-/* ===== فواتير الصنف: قائمة أو جدول ===== */
-function openCategory(name){
-  curCat=APP.categories.find(c=>c.name===name); curInv=null;
-  renderInvoices();
-  window.scrollTo(0,0);
+/* ========== الأصناف ========== */
+function renderCats(){
+  curCat=null;curInv=null;
+  const cats=[...APP.categories].sort((a,b)=>{const c=(a.latestKey||'').localeCompare(b.latestKey||'');if(c!==0)return catSortDesc?-c:c;return b.total-a.total});
+  const click=n=>`openCategory('${n.replace(/'/g,"\\'")}')`;
+  let h=`<div class="fade">
+    <div class="toolbar">
+      <label class="search">${IC.search}<input type="text" placeholder="بحث عن صنف أو شركة..." oninput="filterCards(this.value)"></label>
+      <button class="btn btn-g" onclick="toggleCatSort()">${IC.sort} الفرز: ${catSortDesc?'الأحدث':'الأقدم'}</button>
+      <button class="btn btn-p" onclick="cycleCatView()">${IC.view} العرض: ${VL[catView]}</button>
+    </div>`;
+  if(catView==='list'){
+    h+=`<div class="cat-grid">`;
+    cats.forEach(c=>{h+=`<div class="cat-card cat-item" data-name="${esc(c.name)}" onclick="${click(c.name)}">
+      <div class="cat-av" style="background:${c.color}">${esc(c.letter)}</div>
+      <div class="cat-info">
+        <div class="cat-name">${esc(c.name)}</div>
+        <div class="cat-meta">${c.invoicesCount} فاتورة · ${fmt(c.itemsCount)} مادة · آخر فاتورة ${c.latestKey?fmtDate(c.latestDate):'-'}</div>
+      </div>
+      <div class="cat-total"><div class="v">${fmt(c.total)}</div><div class="l">الإجمالي</div></div>
+    </div>`});
+    h+=`</div>`;
+  }else{
+    h+=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الصنف</th><th>الفواتير</th><th>المواد</th><th>الإجمالي</th><th>آخر فاتورة</th></tr></thead><tbody>`;
+    cats.forEach(c=>{h+=`<tr class="cat-item" data-name="${esc(c.name)}" style="cursor:pointer" onclick="${click(c.name)}">
+      <td style="font-weight:800;color:var(--blue)">${esc(c.name)}</td><td class="num">${c.invoicesCount}</td><td class="num">${fmt(c.itemsCount)}</td><td class="num">${fmt(c.total)}</td><td>${c.latestKey?fmtDate(c.latestDate):'-'}</td></tr>`});
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
+  document.getElementById('viewCats').innerHTML=h;forceOneLine();
 }
+
+/* ========== فواتير الصنف ========== */
+function openCategory(n){curCat=APP.categories.find(c=>c.name===n);curInv=null;renderInvoices();window.scrollTo(0,0)}
 function renderInvoices(){
   const dupSet=APP.dupSet;
-  const invs=[...curCat.invoicesList].sort((a,b)=>{
-    const c=a.dateKey.localeCompare(b.dateKey);
-    if(c!==0) return invSortDesc? -c : c;
-    return invSortDesc? String(b.num).localeCompare(String(a.num)) : String(a.num).localeCompare(String(b.num));
-  });
+  const invs=[...curCat.invoicesList].sort((a,b)=>{const c=a.dateKey.localeCompare(b.dateKey);if(c!==0)return invSortDesc?-c:c;return invSortDesc?String(b.num).localeCompare(String(a.num)):String(a.num).localeCompare(String(b.num))});
   const open=i=>`openInvoice('${i.num}','${i.dateKey}')`;
-  const sdata=i=>`${i.num} ${i.dateKey} ${fmtDate(i.date)} ${i.note||''} ${i.organizer||''} ${i.time||''}`;
-  const itot=i=>i.items.reduce((s,x)=>s+x.total,0);
-
-  let html=`
-    <div class="breadcrumb">
-      <span class="breadcrumb-item" onclick="navCats()">🏠 الأصناف</span>
-      <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item active">${curCat.icon} ${esc(curCat.name)}</span>
+  const sd=i=>`${i.num} ${i.dateKey} ${fmtDate(i.date)} ${i.note||''} ${i.organizer||''} ${i.time||''}`;
+  const it=i=>i.items.reduce((s,x)=>s+x.total,0);
+  let h=`<div class="fade">
+    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><span class="cur">${esc(curCat.name)}</span></div>
+    <div class="toolbar">
+      <label class="search">${IC.search}<input type="text" placeholder="بحث برقم الفاتورة أو التاريخ..." oninput="filterInvs(this.value)"></label>
+      <button class="btn btn-g" onclick="toggleInvSort()">${IC.sort} الفرز: ${invSortDesc?'الأحدث':'الأقدم'}</button>
+      <button class="btn btn-p" onclick="cycleInvView()">${IC.view} العرض: ${VL[invView]}</button>
     </div>`;
-  html+=toolbar('inv');
-  html+=`<div class="search-box fade-in"><span style="font-size:1.2em;">🔍</span><input type="text" placeholder="ابحث برقم الفاتورة أو التاريخ..." oninput="filterInvs(this.value)"></div>`;
-  html+=`<div class="fade-in">`;
-
   if(invView==='list'){
-    html+=`<div class="list-scroll">`;
+    h+=`<div class="list-scroll">`;
     invs.forEach(inv=>{
       const isDup=dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
-      html+=`<div class="invoice-item inv-item" data-search="${esc(sdata(inv)).toLowerCase()}" onclick="${open(inv)}">
-        <div class="invoice-num"><div class="num-label">فاتورة</div><div class="num-value">${inv.num}</div></div>
-        <div class="invoice-info">
-          <div class="row"><span><span class="label">📅</span> <span class="value">${fmtDate(inv.date)}</span></span>
-          <span><span class="label">⏰</span> <span class="value">${inv.time||'-'}</span></span>
-          <span><span class="label">📦</span> <span class="value">${inv.items.length} مادة</span></span></div>
-          <div class="row"><span><span class="label">👤 المنظم:</span> <span class="value">${esc(inv.organizer)||'-'}</span></span></div>
-          ${inv.note?`<div class="row"><span style="color:#856404">📝 ${esc(inv.note)}</span></div>`:''}
-          ${isDup?`<div><span class="dup-flag">⚠️ بها تشابه مع فاتورة أخرى بنفس اليوم</span></div>`:''}
+      h+=`<div class="inv-row inv-item" data-search="${esc(sd(inv)).toLowerCase()}" onclick="${open(inv)}">
+        <div class="inv-no">${inv.num}</div>
+        <div>
+          <div class="inv-l1">${fmtDate(inv.date)} · ${inv.time||'-'} · ${inv.items.length} مادة</div>
+          <div class="inv-l2">منظم الفاتورة: ${esc(inv.organizer)||'-'}</div>
+          ${inv.note?`<div class="inv-note">البيان: ${esc(inv.note)}</div>`:''}
+          ${isDup?`<div class="inv-dup">${IC.warn} بها مواد متشابهة مع فاتورة أخرى بنفس اليوم</div>`:''}
         </div>
-        <div class="invoice-total"><div class="amount">${fmt(itot(inv))}</div><div class="currency">دينار / $</div></div>
+        <div class="inv-sum"><div class="v">${fmt(it(inv))}</div><div class="l">الإجمالي</div></div>
       </div>`;
     });
-    html+=`</div>`;
-  }
-  else{
-    html+=`<div class="table-wrap"><table class="grid">
-      <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الوقت</th><th>عدد المواد</th><th>منظم الفاتورة</th><th>البيان</th><th>الإجمالي</th></tr></thead><tbody>`;
+    h+=`</div>`;
+  }else{
+    h+=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الوقت</th><th>المواد</th><th>منظم الفاتورة</th><th>البيان</th><th>الإجمالي</th><th>تشابه</th></tr></thead><tbody>`;
     invs.forEach(inv=>{
       const isDup=dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
-      html+=`<tr class="inv-item" data-search="${esc(sdata(inv)).toLowerCase()}" style="cursor:pointer;" onclick="${open(inv)}">
-        <td><strong>${inv.num}</strong> ${isDup?'<span class="dup-flag">⚠️</span>':''}</td>
-        <td>${fmtDate(inv.date)}</td>
-        <td>${inv.time||'-'}</td>
-        <td>${inv.items.length}</td>
-        <td>${esc(inv.organizer)||'-'}</td>
-        <td>${esc(inv.note)||'-'}</td>
-        <td><strong>${fmt(itot(inv))}</strong></td>
-      </tr>`;
+      h+=`<tr class="inv-item inv-tr ${isDup?'dup':''}" data-search="${esc(sd(inv)).toLowerCase()}" style="cursor:pointer" onclick="${open(inv)}">
+        <td class="code">${inv.num}</td><td>${fmtDate(inv.date)}</td><td>${inv.time||'-'}</td><td class="num">${inv.items.length}</td>
+        <td>${esc(inv.organizer)||'-'}</td><td class="note">${esc(inv.note)||'-'}</td><td class="num">${fmt(it(inv))}</td>
+        <td class="${isDup?'warn':''}">${isDup?'نعم':'—'}</td></tr>`;
     });
-    html+=`</tbody></table></div>`;
+    h+=`</tbody></table></div>`;
   }
-
-  html+=`</div>`;
-
-  html+=`<div class="stats-grid fade-in" style="margin-top:20px;margin-bottom:0;">
-    <div class="stat-card"><div class="number">${curCat.invoicesCount}</div><div class="label">عدد الفواتير</div></div>
-    <div class="stat-card"><div class="number">${fmt(curCat.itemsCount)}</div><div class="label">عدد المواد</div></div>
-    <div class="stat-card"><div class="number">${fmt(curCat.total)}</div><div class="label">الإجمالي</div></div>
-  </div>`;
-
-  document.getElementById('viewCats').innerHTML=html;
-  forceOneLine();
+  h+=`<div class="kpis" style="margin-top:18px">
+    <div class="kpi b"><div class="v">${curCat.invoicesCount}</div><div class="l">عدد الفواتير</div></div>
+    <div class="kpi"><div class="v">${fmt(curCat.itemsCount)}</div><div class="l">عدد المواد</div></div>
+    <div class="kpi g"><div class="v">${fmt(curCat.total)}</div><div class="l">إجمالي الصنف</div></div>
+  </div></div>`;
+  document.getElementById('viewCats').innerHTML=h;forceOneLine();
 }
 
-/* ===== تفاصيل الفاتورة: زر العرض بالأعلى + قائمة أو جدول ===== */
-function openInvoice(num,dateKey){
-  curInv=curCat.invoicesList.find(i=>i.num==num&&i.dateKey===dateKey);
-  renderInvoiceDetail();
-  window.scrollTo(0,0);
-}
+/* ========== تفاصيل الفاتورة ========== */
+function openInvoice(n,d){curInv=curCat.invoicesList.find(i=>i.num==n&&i.dateKey===d);renderInvoiceDetail();window.scrollTo(0,0)}
 function renderInvoiceDetail(){
-  const inv=curInv;
-  const items=getDetItems();
-  const sumQty=inv.items.reduce((s,i)=>s+i.qty,0);
-  const sumTot=inv.items.reduce((s,i)=>s+i.total,0);
-  const sumFin=inv.items.reduce((s,i)=>s+i.final,0);
-  const dupKey=curCat.name+'|'+inv.num+'|'+inv.dateKey;
-
-  let html=`
-    <div class="breadcrumb">
-      <span class="breadcrumb-item" onclick="navCats()">🏠 الأصناف</span>
-      <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item" onclick="navInvs()">${curCat.icon} ${esc(curCat.name)}</span>
-      <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-item active">فاتورة ${inv.num}</span>
-    </div>`;
-
-  /* شريط الأدوات في الأعلى */
-  html+=detToolbar();
-
-  html+=`
-    <div class="detail-header fade-in">
-      <div class="inv-title">🧾 فاتورة رقم ${inv.num}</div>
-      <div class="detail-info-grid">
-        <div class="detail-info-item"><div class="lbl">🏢 العميل</div><div class="val">${esc(curCat.name)}</div></div>
-        <div class="detail-info-item"><div class="lbl">📅 التاريخ</div><div class="val">${fmtDate(inv.date)}</div></div>
-        <div class="detail-info-item"><div class="lbl">⏰ الوقت</div><div class="val">${inv.time||'-'}</div></div>
-        <div class="detail-info-item"><div class="lbl">📄 النوع</div><div class="val">${esc(inv.type)}</div></div>
-        <div class="detail-info-item"><div class="lbl">👤 منظم الفاتورة</div><div class="val">${esc(inv.organizer)||'-'}</div></div>
-        <div class="detail-info-item"><div class="lbl">💵 حسم الفاتورة</div><div class="val">${fmt(inv.invDiscount)}</div></div>
+  const inv=curInv,items=getDetItems();
+  const sQ=inv.items.reduce((s,i)=>s+i.qty,0),sT=inv.items.reduce((s,i)=>s+i.total,0),sF=inv.items.reduce((s,i)=>s+i.final,0);
+  const isDup=APP.dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
+  let h=`<div class="fade">
+    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><a onclick="renderInvoices()">${esc(curCat.name)}</a><span class="sep">‹</span><span class="cur">فاتورة ${inv.num}</span></div>
+    <div class="toolbar">
+      <button class="btn btn-p" onclick="cycleDetView()">${IC.view} العرض: ${VL[detView]}</button>
+      <button class="btn btn-g" onclick="cycleDetSort()">${IC.sort} الفرز: ${SL[detSort]}</button>
+      ${isDup?`<button class="btn btn-o" onclick="switchTab('dup')">${IC.warn} عرض في كشف التشابه</button>`:''}
+    </div>
+    <div class="info-card">
+      <div class="info-title"><span class="no">فاتورة رقم ${inv.num}</span><span class="tag">${esc(inv.type)}</span></div>
+      <div class="info-grid">
+        <div class="info-item"><div class="l">العميل</div><div class="v">${esc(curCat.name)}</div></div>
+        <div class="info-item"><div class="l">التاريخ</div><div class="v">${fmtDate(inv.date)}</div></div>
+        <div class="info-item"><div class="l">الوقت</div><div class="v">${inv.time||'-'}</div></div>
+        <div class="info-item"><div class="l">منظم الفاتورة</div><div class="v">${esc(inv.organizer)||'-'}</div></div>
+        <div class="info-item"><div class="l">حسم الفاتورة</div><div class="v">${fmt(inv.invDiscount)}</div></div>
+        <div class="info-item"><div class="l">عدد المواد</div><div class="v">${inv.items.length}</div></div>
       </div>
-      ${inv.note?`<div class="note-box" style="background:rgba(255,255,255,.15);color:#fff;border-color:#ff8c42">📝 البيان: ${esc(inv.note)}</div>`:''}
-      ${APP.dupSet.has(dupKey)?`<button class="link-btn" onclick="switchTab('dup')">⚠️ عرض هذه الفاتورة في قسم التشابه</button>`:''}
+      ${inv.note?`<div class="info-note">البيان: ${esc(inv.note)}</div>`:''}
     </div>`;
-
   if(detView==='table'){
-    html+=`
-    <div class="section-box fade-in">
-      <div class="section-title"><span>📋 تفاصيل المواد (${inv.items.length} مادة)</span><span class="badge">جدول مطابق لملف الفواتير — قابل للتمرير</span></div>
-      <div class="table-wrap">
-        <table class="grid">
-          <thead><tr>
-            <th>#</th><th>رمز المادة</th><th>المادة</th><th>الوحدة</th><th>الكمية</th>
-            <th>السعر الافرادي</th><th>سعر المبيع</th><th>السعر الاجمالي</th>
-            <th>الحسم</th><th>قيمة الحسم</th><th>السعر النهائي</th><th>البيان</th>
-          </tr></thead>
-          <tbody>
-          ${items.map((it,idx)=>`
-            <tr>
-              <td>${idx+1}</td>
-              <td><span class="code-tag">${it.code}</span></td>
-              <td>${esc(it.name)}</td>
-              <td>${esc(it.unit)||'قطعة'}</td>
-              <td><span class="qty-badge">${fmt(it.qty)}</span></td>
-              <td>${fmt(it.price)}</td>
-              <td>${fmt(it.sale)}</td>
-              <td><strong>${fmt(it.total)}</strong></td>
-              <td>${fmt(it.disc)}</td>
-              <td>${fmt(it.discVal)}</td>
-              <td>${fmt(it.final)}</td>
-              <td>${it.note?`<span style="color:#856404;font-weight:700">${esc(it.note)}</span>`:'-'}</td>
-            </tr>`).join('')}
-          </tbody>
-          <tfoot><tr>
-            <td colspan="4">الإجمالي</td>
-            <td>${fmt(sumQty)}</td>
-            <td colspan="2"></td>
-            <td>${fmt(sumTot)}</td>
-            <td colspan="2"></td>
-            <td>${fmt(sumFin)}</td>
-            <td></td>
-          </tr></tfoot>
-        </table>
-      </div>
+    h+=`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>#</th><th>رمز المادة</th><th>المادة</th><th>الوحدة</th><th>الكمية</th><th>السعر الافرادي</th><th>سعر المبيع</th><th>السعر الاجمالي</th><th>الحسم</th><th>قيمة الحسم</th><th>السعر النهائي</th><th>البيان</th>
+    </tr></thead><tbody>
+    ${items.map((it,x)=>`<tr>
+      <td>${x+1}</td><td class="code">${it.code}</td><td style="font-weight:700">${esc(it.name)}</td><td>${esc(it.unit)||'قطعة'}</td>
+      <td class="num">${fmt(it.qty)}</td><td class="num">${fmt(it.price)}</td><td class="num">${fmt(it.sale)}</td><td class="num">${fmt(it.total)}</td>
+      <td class="num">${fmt(it.disc)}</td><td class="num">${fmt(it.discVal)}</td><td class="num">${fmt(it.final)}</td>
+      <td class="note">${esc(it.note)||'-'}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td>${fmt(sQ)}</td><td colspan="2"></td><td>${fmt(sT)}</td><td colspan="2"></td><td>${fmt(sF)}</td><td></td></tr></tfoot></table></div>`;
+  }else{
+    h+=`<div class="list-scroll">`;
+    items.forEach((it,x)=>{h+=`<div class="inv-row" style="grid-template-columns:70px 1fr auto;cursor:default">
+      <div class="inv-no" style="font-size:.9em;background:#fff;border:1px solid var(--line)">${it.code}</div>
+      <div><div class="inv-l1">${esc(it.name)}</div><div class="inv-l2">${esc(it.unit)||'قطعة'} · الكمية ${fmt(it.qty)} · سعر ${fmt(it.price)}</div>${it.note?`<div class="inv-note">${esc(it.note)}</div>`:''}</div>
+      <div class="inv-sum"><div class="v">${fmt(it.total)}</div><div class="l">الإجمالي</div></div>
+    </div>`});
+    h+=`</div>
+    <div class="kpis" style="margin-top:16px">
+      <div class="kpi b"><div class="v">${fmt(sQ)}</div><div class="l">مجموع الكميات</div></div>
+      <div class="kpi"><div class="v">${fmt(sT)}</div><div class="l">مجموع الإجمالي</div></div>
+      <div class="kpi g"><div class="v">${fmt(sF)}</div><div class="l">مجموع النهائي</div></div>
     </div>`;
   }
-  else{
-    html+=`<div class="list-scroll fade-in">`;
-    items.forEach((it,idx)=>{
-      html+=`<div class="list-row" style="cursor:default;">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="color:#999;font-weight:700;">${idx+1}</span>
-          <span class="code-tag">${it.code}</span>
-          <strong style="color:#1e3c72;">${esc(it.name)}</strong>
-          ${it.note?`<span style="color:#856404;font-size:.8em;">📝 ${esc(it.note)}</span>`:''}
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="qty-badge">${fmt(it.qty)}</span>
-          <span class="total-value">${fmt(it.total)}</span>
-        </div>
-      </div>`;
-    });
-    html+=`</div>
-    <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
-      <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
-      <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
-      <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
-    </div>`;
-  }
-
-  html+=`<div style="margin-top:18px;"><button class="back-btn" onclick="navInvs()">→ العودة لقائمة الفواتير</button></div>`;
-
-  document.getElementById('viewCats').innerHTML=html;
-  forceOneLine();
+  h+=`<div style="margin-top:16px"><button class="btn btn-g" onclick="renderInvoices()">العودة لقائمة الفواتير</button></div></div>`;
+  document.getElementById('viewCats').innerHTML=h;forceOneLine();
 }
-
-/* ===== تنقل مع صعود للأعلى فقط عند فتح صفحة جديدة ===== */
-function navCats(){ renderCats(); window.scrollTo(0,0); }
-function navInvs(){ renderInvoices(); window.scrollTo(0,0); }
 
 async function init(){
   try{
@@ -652,13 +506,10 @@ async function init(){
     APP.dupSet=new Set();
     APP.dupDays.forEach(d=>d.invoices.forEach(i=>APP.dupSet.add(d.category+'|'+i.num+'|'+i.dateKey)));
     const keys=APP.categories.flatMap(c=>c.invoicesList.map(i=>i.dateKey)).sort();
-    document.getElementById('periodInfo').textContent=`الفترة: ${keys[0]} → ${keys[keys.length-1]} | ${APP.categories.length} صنف | 📄 ${decodeURIComponent(window.USED_FILE.split('/').pop())}`;
-    renderDup();
-    renderCats();
-    switchTab('dup');
+    document.getElementById('periodInfo').textContent=`${keys[0]} → ${keys[keys.length-1]} · ${APP.categories.length} صنف`;
+    renderDup();renderCats();switchTab('dup');
   }catch(e){
-    document.getElementById('viewDup').innerHTML=`<div class="loading"><h2>❌ فشل تحميل الملف</h2><p>${e.message}</p><button class="back-btn" onclick="init()" style="margin-top:18px;">🔄 إعادة المحاولة</button></div>`;
-    document.getElementById('periodInfo').textContent='⚠️ فشل تحميل البيانات';
+    document.getElementById('viewDup').innerHTML=`<div class="loading"><div class="spin"></div><h3 style="color:var(--danger)">تعذر تحميل البيانات</h3><p style="color:var(--muted);margin-top:8px">${esc(e.message)}</p><button class="btn btn-p" style="margin-top:16px" onclick="init()">إعادة المحاولة</button></div>`;
   }
 }
 init();
