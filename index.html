@@ -157,8 +157,8 @@
   <div id="viewDup"></div>
   <div id="viewCats" class="hidden"></div>
 
-  <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يقرأ مباشرة من ملف فواتير الشراء.xlsx في مستودع Tdkek<br>
-    <span class="ver-tag">الإصدار: v9 — قارئ متعدد المسارات للمستودع</span>
+  <div class="footer">🎨 نظام التدقيق الذكي © 2026 | يقرأ مباشرة من ملف فواتير الشراء.xlsx في المستودع<br>
+    <span class="ver-tag">الإصدار: v10 — تغيير عرض تفاصيل الفاتورة</span>
   </div>
 </div>
 
@@ -166,10 +166,14 @@
 let APP=null, catLevel='cats', curCat=null, curInv=null;
 let catSortDesc=true, invSortDesc=true;
 let catView='tiles', invView='details';
+let detView='table', detSort='orig';
 const VIEWS=['tiles','list','details','content'];
 const VIEW_LABELS={tiles:'🔲 بلاطات',list:'📃 قائمة',details:'📋 تفاصيل',content:'📊 جدول'};
+const DET_VIEWS=['table','tiles','list','details'];
+const DET_LABELS={table:'📊 جدول',tiles:'🔲 بطاقات',list:'📃 قائمة',details:'📋 تفاصيل'};
+const DET_SORTS=['orig','qty','total','name'];
+const DET_SORT_LABELS={orig:'الترتيب الأصلي',qty:'الكمية الأعلى',total:'الإجمالي الأعلى',name:'الاسم'};
 
-/* ===== قارئ ذكي: يجرب كل المسارات الممكنة لملف المستودع ===== */
 const FILE_NAMES=[
   'فواتير الشراء.xlsx',
   encodeURI('فواتير الشراء.xlsx'),
@@ -279,7 +283,7 @@ function analyze(rows){
     c.latestKey=c.invoicesList.length?c.invoicesList[0].dateKey:'';
     c.latestDate=c.invoicesList.length?c.invoicesList[0].date:null;
     c.color=['#2a5298','#ff8c42','#27ae60','#e74c3c','#9b59b6','#16a085','#f39c12','#34495e','#c0392b','#2980b9','#8e44ad','#1abc9c','#d35400','#7f8c8d','#e67e22'][i%15];
-    c.icon=['🏢','🎨','🏭','🏪','🧰','️','🛒','','🖌️','🔩','','📦','','🧪',''][i%15];
+    c.icon=['🏢','','🏭','','🧰','️','🛒','','🖌️','','','','','🧪',''][i%15];
     return c;
   }).sort((a,b)=>b.total-a.total);
   return {categories};
@@ -325,6 +329,16 @@ function toggleCatSort(){ catSortDesc=!catSortDesc; renderCats(); }
 function toggleInvSort(){ invSortDesc=!invSortDesc; renderInvoices(); }
 function cycleCatView(){ catView=VIEWS[(VIEWS.indexOf(catView)+1)%VIEWS.length]; renderCats(); }
 function cycleInvView(){ invView=VIEWS[(VIEWS.indexOf(invView)+1)%VIEWS.length]; renderInvoices(); }
+function cycleDetView(){ detView=DET_VIEWS[(DET_VIEWS.indexOf(detView)+1)%DET_VIEWS.length]; renderInvoiceDetail(); }
+function cycleDetSort(){ detSort=DET_SORTS[(DET_SORTS.indexOf(detSort)+1)%DET_SORTS.length]; renderInvoiceDetail(); }
+
+function getDetItems(){
+  let arr=[...curInv.items];
+  if(detSort==='qty') arr.sort((a,b)=>b.qty-a.qty);
+  else if(detSort==='total') arr.sort((a,b)=>b.total-a.total);
+  else if(detSort==='name') arr.sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+  return arr;
+}
 
 function filterCards(q){
   q=q.toLowerCase();
@@ -575,6 +589,7 @@ function openInvoice(num,dateKey){
 }
 function renderInvoiceDetail(){
   const inv=curInv;
+  const items=getDetItems();
   const sumQty=inv.items.reduce((s,i)=>s+i.qty,0);
   const sumTot=inv.items.reduce((s,i)=>s+i.total,0);
   const sumFin=inv.items.reduce((s,i)=>s+i.final,0);
@@ -602,6 +617,13 @@ function renderInvoiceDetail(){
       ${APP.dupSet.has(dupKey)?`<button class="link-btn" onclick="switchTab('dup')">⚠️ عرض هذه الفاتورة في قسم التشابه</button>`:''}
     </div>
 
+    <div class="toolbar fade-in">
+      <button class="tool-btn orange" onclick="cycleDetView()">👁 العرض: ${DET_LABELS[detView]}</button>
+      <button class="tool-btn" onclick="cycleDetSort()">🔄 فرز: ${DET_SORT_LABELS[detSort]}</button>
+    </div>`;
+
+  if(detView==='table'){
+    html+=`
     <div class="section-box fade-in">
       <div class="section-title"><span>📋 تفاصيل المواد (${inv.items.length} مادة)</span><span class="badge">جدول مطابق لملف الفواتير — قابل للتمرير</span></div>
       <div class="table-wrap">
@@ -612,7 +634,7 @@ function renderInvoiceDetail(){
             <th>الحسم</th><th>قيمة الحسم</th><th>السعر النهائي</th><th>البيان</th>
           </tr></thead>
           <tbody>
-          ${inv.items.map((it,idx)=>`
+          ${items.map((it,idx)=>`
             <tr>
               <td>${idx+1}</td>
               <td><span class="code-tag">${it.code}</span></td>
@@ -639,8 +661,79 @@ function renderInvoiceDetail(){
           </tr></tfoot>
         </table>
       </div>
-      <button class="back-btn" onclick="renderInvoices()">→ العودة لقائمة الفواتير</button>
     </div>`;
+  }
+  else if(detView==='tiles'){
+    html+=`<div class="tiles-grid fade-in">`+items.map(it=>`
+      <div class="tile-card" style="text-align:right;cursor:default;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span class="code-tag">${it.code}</span>
+          <span class="qty-badge">${fmt(it.qty)}</span>
+        </div>
+        <div style="font-weight:800;color:#1e3c72;margin:10px 0;">${esc(it.name)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:.83em;color:#666;flex-wrap:wrap;gap:4px;">
+          <span>الإفرادي: ${fmt(it.price)}</span><span>المبيع: ${fmt(it.sale)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <strong style="color:#ff8c42;font-size:1.05em;">${fmt(it.total)}</strong>
+          <span style="font-size:.8em;color:#666;">${esc(it.unit)||'قطعة'}</span>
+        </div>
+        ${it.note?`<div class="note-box" style="margin-top:8px;">📝 ${esc(it.note)}</div>`:''}
+      </div>`).join('')+`</div>
+      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
+        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
+      </div>`;
+  }
+  else if(detView==='list'){
+    html+=`<div class="list-scroll fade-in">`+items.map((it,idx)=>`
+      <div class="list-row" style="cursor:default;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="color:#999;font-weight:700;">${idx+1}</span>
+          <span class="code-tag">${it.code}</span>
+          <strong style="color:#1e3c72;">${esc(it.name)}</strong>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="qty-badge">${fmt(it.qty)}</span>
+          <span class="total-value">${fmt(it.total)}</span>
+        </div>
+      </div>`).join('')+`</div>
+      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
+        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
+      </div>`;
+  }
+  else{
+    html+=`<div class="fade-in">`+items.map((it,idx)=>`
+      <div class="section-box" style="padding:16px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="code-tag">#${idx+1} | ${it.code}</span>
+            <strong style="color:#1e3c72;font-size:1.05em;">${esc(it.name)}</strong>
+          </div>
+          <span class="qty-badge">${fmt(it.qty)} ${esc(it.unit)||'قطعة'}</span>
+        </div>
+        <div class="detail-info-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
+          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">السعر الافرادي</div><div class="val" style="color:#1e3c72;">${fmt(it.price)}</div></div>
+          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">سعر المبيع</div><div class="val" style="color:#1e3c72;">${fmt(it.sale)}</div></div>
+          <div class="detail-info-item" style="background:#fff5eb;"><div class="lbl" style="color:#666;">السعر الاجمالي</div><div class="val" style="color:#ff8c42;">${fmt(it.total)}</div></div>
+          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">الحسم</div><div class="val" style="color:#1e3c72;">${fmt(it.disc)}</div></div>
+          <div class="detail-info-item" style="background:#f4f7ff;"><div class="lbl" style="color:#666;">قيمة الحسم</div><div class="val" style="color:#1e3c72;">${fmt(it.discVal)}</div></div>
+          <div class="detail-info-item" style="background:#e8f5e9;"><div class="lbl" style="color:#666;">السعر النهائي</div><div class="val" style="color:#27ae60;">${fmt(it.final)}</div></div>
+        </div>
+        ${it.note?`<div class="note-box">📝 البيان: ${esc(it.note)}</div>`:''}
+      </div>`).join('')+`</div>
+      <div class="stats-grid fade-in" style="margin-top:18px;margin-bottom:0;">
+        <div class="stat-card"><div class="number">${fmt(sumQty)}</div><div class="label">مجموع الكميات</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumTot)}</div><div class="label">مجموع الإجمالي</div></div>
+        <div class="stat-card"><div class="number">${fmt(sumFin)}</div><div class="label">مجموع النهائي</div></div>
+      </div>`;
+  }
+
+  html+=`<div style="margin-top:18px;"><button class="back-btn" onclick="renderInvoices()">→ العودة لقائمة الفواتير</button></div>`;
+
   document.getElementById('viewCats').innerHTML=html;
   forceOneLine();
   window.scrollTo(0,0);
