@@ -197,8 +197,9 @@ td.lah{color:var(--orange-2);font-weight:900}
 <script>
 let APP=null,curCat=null,curInv=null,curDeb=null;
 let catSortDesc=true,invSortDesc=true,detSort='orig';
-let catView='list',invView='list',detView='table';
-let debFilter='all',debSort='bal',debView='table';
+/* ===== الافتراضي دائماً: قائمة أولاً ===== */
+let catView='list',invView='list',detView='list';
+let debFilter='all',debSort='bal',debView='list';
 const VIEWS=['list','table'];
 const VL={list:'قائمة',table:'جدول'};
 const SORTS=['orig','qty','total','name'];
@@ -412,15 +413,15 @@ function filterInvs(q){q=q.toLowerCase();document.querySelectorAll('.inv-row,tr.
 /* ========== كشف التشابه ========== */
 function renderDup(){
   const days=APP.dupDays;
-  const invSet=new Set();days.forEach(d=>d.invoices.forEach(i=>invSet.add(d.category+'|'+i.num+'|'+i.dateKey)));
-  const totD=days.reduce((s,d)=>s+d.dups.length,0);
-  const totQ=days.reduce((s,d)=>s+d.dups.reduce((x,m)=>x+Object.values(m.per).reduce((a,b)=>a+b,0),0),0);
+  const involved=new Set();days.forEach(d=>d.invoices.forEach(i=>involved.add(d.category+'|'+i.num+'|'+i.dateKey)));
+  const totalDups=days.reduce((s,d)=>s+d.dups.length,0);
+  const totalQty=days.reduce((s,d)=>s+d.dups.reduce((x,m)=>x+Object.values(m.per).reduce((a,b)=>a+b,0),0),0);
   let html=`<div class="fade">
   <div class="kpis">
     <div class="kpi r"><div class="v">${days.length}</div><div class="l">أيام بها تشابه</div></div>
-    <div class="kpi b"><div class="v">${invSet.size}</div><div class="l">فواتير متداخلة</div></div>
-    <div class="kpi"><div class="v">${totD}</div><div class="l">مواد متشابهة</div></div>
-    <div class="kpi g"><div class="v">${fmt(totQ)}</div><div class="l">مجموع الكميات المكررة</div></div>
+    <div class="kpi b"><div class="v">${involved.size}</div><div class="l">فواتير متداخلة</div></div>
+    <div class="kpi"><div class="v">${totalDups}</div><div class="l">مواد متشابهة</div></div>
+    <div class="kpi g"><div class="v">${fmt(totalQty)}</div><div class="l">مجموع الكميات المكررة</div></div>
   </div>`;
   if(!days.length){html+=`<div class="panel" style="padding:30px;text-align:center;color:var(--ok);font-weight:800">لا توجد مواد متشابهة بين فواتير أي يوم</div>`;}
   else{
@@ -489,7 +490,7 @@ function renderInvoices(){
   const sd=i=>`${i.num} ${i.dateKey} ${fmtDate(i.date)} ${i.note||''} ${i.organizer||''} ${i.time||''}`;
   const it=i=>i.items.reduce((s,x)=>s+x.total,0);
   let html=`<div class="fade">
-    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><span class="cur">${esc(curCat.name)}</span></div>`;
+    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">›</span><span class="cur">${esc(curCat.name)}</span></div>`;
   html+=toolbar('inv');
   html+=`<label class="search">${IC.search}<input type="text" placeholder="بحث برقم الفاتورة أو التاريخ..." oninput="filterInvs(this.value)"></label>`;
   html+=`<div style="margin-top:14px">`;
@@ -534,13 +535,12 @@ function renderInvoiceDetail(){
   const sQ=inv.items.reduce((s,i)=>s+i.qty,0),sT=inv.items.reduce((s,i)=>s+i.total,0),sF=inv.items.reduce((s,i)=>s+i.final,0);
   const isDup=APP.dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
   let html=`<div class="fade">
-    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><a onclick="renderInvoices()">${esc(curCat.name)}</a><span class="sep">‹</span><span class="cur">فاتورة ${inv.num}</span></div>`;
-  html+=`<div class="toolbar">
-    <button class="btn btn-p" onclick="cycleDetView()">${IC.view} العرض: ${VL[detView]}</button>
-    <button class="btn btn-g" onclick="cycleDetSort()">${IC.sort} الفرز: ${SL[detSort]}</button>
-    ${isDup?`<button class="btn btn-o" onclick="switchTab('dup')">${IC.warn} عرض في كشف التشابه</button>`:''}
-  </div>`;
-  html+=`
+    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">›</span><a onclick="renderInvoices()">${esc(curCat.name)}</a><span class="sep">›</span><span class="cur">فاتورة ${inv.num}</span></div>
+    <div class="toolbar">
+      <button class="btn btn-p" onclick="cycleDetView()">${IC.view} العرض: ${VL[detView]}</button>
+      <button class="btn btn-g" onclick="cycleDetSort()">${IC.sort} الفرز: ${SL[detSort]}</button>
+      ${isDup?`<button class="btn btn-o" onclick="switchTab('dup')">${IC.warn} عرض في كشف التشابه</button>`:''}
+    </div>
     <div class="info-card">
       <div class="info-title"><span class="no">فاتورة رقم ${inv.num}</span><span class="tag">${esc(inv.type)}</span></div>
       <div class="info-grid">
@@ -673,7 +673,7 @@ function renderDebtorDetail(){
   const pct=v=>d.bal?((v/d.bal)*100).toFixed(1)+'%':'0%';
   const dirTxt=d.dir==='لنا'?'مستحق لنا — الطرف الآخر لم يدفع بعد':(d.dir==='لهم'?'مستحق لهم — علينا نحن الدفع':'غير محدد');
   let html=`<div class="fade">
-    <div class="crumbs"><a onclick="renderDebts()">الديون</a><span class="sep">‹</span><span class="cur">${esc(d.name)}</span></div>
+    <div class="crumbs"><a onclick="renderDebts()">الديون</a><span class="sep">›</span><span class="cur">${esc(d.name)}</span></div>
     <div class="info-card">
       <div class="info-title"><span class="no">${esc(d.name)}</span><span class="tag">${d.dir||'-'}</span>${d.phone?`<span class="tag" style="display:inline-flex;align-items:center;gap:6px"><a style="color:#fff;text-decoration:none" href="tel:${d.phone}">${IC.phone} ${d.phone}</a></span>`:''}</div>
       <div class="info-grid">
