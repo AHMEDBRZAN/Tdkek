@@ -123,7 +123,6 @@ td.lah{color:var(--orange-2);font-weight:900}
 .info-item .v{font-size:.92em;font-weight:800;margin-top:2px}
 .info-note{margin-top:12px;background:rgba(245,130,32,.18);border:1px solid rgba(245,130,32,.45);border-radius:10px;padding:9px 13px;font-size:.8em;font-weight:700}
 
-/* ===== أعمار الديون ===== */
 .age-bar{display:flex;height:12px;border-radius:8px;overflow:hidden;background:#E7EDF3;margin:10px 0 6px}
 .age-bar span{display:block;height:100%}
 .age-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.72em;color:var(--muted);font-weight:800}
@@ -214,22 +213,42 @@ const IC={
  phone:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg>'
 };
 
-const FILE_NAMES=['فواتير الشراء.xlsx',encodeURI('فواتير الشراء.xlsx'),'invoices.xlsx','\u200E\u2068فواتير الشراء\u2069.xlsx','\u200Eفواتير الشراء.xlsx','فواتير_الشراء.xlsx'];
-const DEBT_NAMES=['الديون.xlsx',encodeURI('الديون.xlsx'),'debts.xlsx','\u200Eالديون.xlsx','الديون_2026.xlsx'];
-const BASES=['','/Tdkek/','https://raw.githubusercontent.com/AHMEDBRZAN/Tdkek/main/'];
+/* ===== تحميل ذكي: اكتشاف الاسم الحقيقي عبر GitHub API ثم محاولات احتياطية ===== */
+const REPO='AHMEDBRZAN/Tdkek';
+const BASES=['','/Tdkek/'];
+const INV_NAMES=['فواتير الشراء.xlsx',encodeURI('فواتير الشراء.xlsx'),'invoices.xlsx','\u200E\u2068فواتير الشراء\u2069.xlsx','\u200Eفواتير الشراء.xlsx','فواتير_الشراء.xlsx'];
+const DEB_NAMES=['الديون.xlsx',encodeURI('الديون.xlsx'),'debts.xlsx','\u200E\u2068الديون\u2069.xlsx','\u2068الديون\u2069.xlsx','\u200Eالديون.xlsx','الديون_2026.xlsx'];
 
-async function fetchFirst(names){
-  for(const b of BASES)for(const n of names){
+async function readWB(buf){const wb=XLSX.read(buf,{type:'array'});return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});}
+async function findViaAPI(keyword){
+  try{
+    const r=await fetch('https://api.github.com/repos/'+REPO+'/contents/',{cache:'no-store'});
+    if(!r.ok)return null;
+    const list=await r.json();
+    if(!Array.isArray(list))return null;
+    const f=list.find(x=>x.type==='file'&&x.name.indexOf(keyword)!==-1&&/\.xlsx?$/i.test(x.name));
+    if(!f)return null;
+    return f.download_url||('https://raw.githubusercontent.com/'+REPO+'/main/'+encodeURI(f.name));
+  }catch(e){return null;}
+}
+async function loadSheet(keyword,candidates){
+  const api=await findViaAPI(keyword);
+  const urls=api?[api]:[];
+  for(const b of BASES)for(const n of candidates)urls.push(b+n);
+  for(const u of urls){
     try{
-      const r=await fetch(b+n+'?t='+Date.now(),{cache:'no-store'});
-      if(r.ok){const buf=await r.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});}
+      const r=await fetch(u+(u.indexOf('?')===-1?'?':'&')+'t='+Date.now(),{cache:'no-store'});
+      if(r.ok){
+        const buf=await r.arrayBuffer();
+        if(buf.byteLength>0)return readWB(buf);
+      }
     }catch(e){}
   }
   return null;
 }
 
 function parseNum(v){if(v==null||v==='')return 0;if(typeof v==='number')return v;const n=parseFloat(String(v).replace(/,/g,'').trim());return isNaN(n)?0:n}
-function parseMoney(v){const s=String(v==null?'':v).replace(/[^0-9.,-]/g,'');return parseNum(s)}
+function parseMoney(v){return parseNum(String(v==null?'':v).replace(/[^0-9.,-]/g,''))}
 function parseDate(v){
   if(!v)return null;
   if(v instanceof Date)return v;
@@ -245,7 +264,6 @@ function fmt(n){return Number(n||0).toLocaleString('en-US',{maximumFractionDigit
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function keepScroll(fn){const y=window.scrollY;fn();window.scrollTo(0,y)}
 
-/* ========== تحليل فواتير الشراء ========== */
 function analyze(rows){
   const cats={};
   let cur={client:'',invNum:null,time:'',date:null,type:'',organizer:'',note:''};
@@ -317,7 +335,7 @@ function computeDuplicates(categories){
   return days.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
 }
 
-/* ========== تحليل الديون ========== */
+/* ===== الديون ===== */
 function parseDebts(rows){
   const list=[];
   for(const r of rows){
@@ -327,12 +345,7 @@ function parseDebts(rows){
     const name=String(r[1]||'').trim();
     const balRaw=String(r[2]||'').trim();
     const dir=balRaw.includes('لهم')?'لهم':(balRaw.includes('لنا')?'لنا':'');
-    const bal=parseMoney(balRaw);
-    list.push({
-      code,name,dir,bal,
-      b30:parseNum(r[3]),b60:parseNum(r[4]),b90:parseNum(r[5]),b120:parseNum(r[6]),bMore:parseNum(r[7]),
-      phone:String(r[8]||'').trim()
-    });
+    list.push({code,name,dir,bal:parseMoney(balRaw),b30:parseNum(r[3]),b60:parseNum(r[4]),b90:parseNum(r[5]),b120:parseNum(r[6]),bMore:parseNum(r[7]),phone:String(r[8]||'').trim()});
   }
   return list;
 }
@@ -340,9 +353,7 @@ function debStats(list){
   const s={lna:0,lah:0,more:0,mid:0,fresh:0,n:list.length};
   list.forEach(d=>{
     if(d.dir==='لهم')s.lah+=d.bal;else s.lna+=d.bal;
-    s.fresh+=d.b30;
-    s.mid+=d.b60+d.b90+d.b120;
-    s.more+=d.bMore;
+    s.fresh+=d.b30;s.mid+=d.b60+d.b90+d.b120;s.more+=d.bMore;
   });
   return s;
 }
@@ -359,7 +370,6 @@ const AGE_LEGEND=`<div class="age-legend">
   <span><i style="background:var(--amore)"></i>أكثر من 120 (ما انْدفع)</span>
 </div>`;
 
-/* ========== التبويبات ========== */
 function switchTab(t){
   document.getElementById('viewDup').classList.toggle('hidden',t!=='dup');
   document.getElementById('viewCats').classList.toggle('hidden',t!=='cats');
@@ -439,7 +449,7 @@ function renderDup(){
   document.getElementById('viewDup').innerHTML=html;
 }
 
-/* ========== الأصناف والفواتير ========== */
+/* ========== الأصناف ========== */
 function renderCats(){
   curCat=null;curInv=null;
   const cats=[...APP.categories].sort((a,b)=>{const c=(a.latestKey||'').localeCompare(b.latestKey||'');if(c!==0)return catSortDesc?-c:c;return b.total-a.total});
@@ -463,7 +473,7 @@ function renderCats(){
   }else{
     html+=`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الصنف</th><th>الفواتير</th><th>المواد</th><th>الإجمالي</th><th>آخر فاتورة</th></tr></thead><tbody>`;
     cats.forEach(cat=>{
-      html+=`<tr class="cat-card-row" data-name="${esc(cat.name)}" style="cursor:pointer" onclick="${click(cat.name)}">
+      html+=`<tr data-name="${esc(cat.name)}" style="cursor:pointer" onclick="${click(cat.name)}">
         <td class="name">${esc(cat.name)}</td><td class="num">${cat.invoicesCount}</td><td class="num">${fmt(cat.itemsCount)}</td><td class="num">${fmt(cat.total)}</td><td>${cat.latestKey?fmtDate(cat.latestDate):'-'}</td></tr>`;
     });
     html+=`</tbody></table></div>`;
@@ -524,12 +534,13 @@ function renderInvoiceDetail(){
   const sQ=inv.items.reduce((s,i)=>s+i.qty,0),sT=inv.items.reduce((s,i)=>s+i.total,0),sF=inv.items.reduce((s,i)=>s+i.final,0);
   const isDup=APP.dupSet.has(curCat.name+'|'+inv.num+'|'+inv.dateKey);
   let html=`<div class="fade">
-    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><a onclick="renderInvoices()">${esc(curCat.name)}</a><span class="sep">‹</span><span class="cur">فاتورة ${inv.num}</span></div>
-    <div class="toolbar">
-      <button class="btn btn-p" onclick="cycleDetView()">${IC.view} العرض: ${VL[detView]}</button>
-      <button class="btn btn-g" onclick="cycleDetSort()">${IC.sort} الفرز: ${SL[detSort]}</button>
-      ${isDup?`<button class="btn btn-o" onclick="switchTab('dup')">${IC.warn} عرض في كشف التشابه</button>`:''}
-    </div>
+    <div class="crumbs"><a onclick="renderCats()">الأصناف</a><span class="sep">‹</span><a onclick="renderInvoices()">${esc(curCat.name)}</a><span class="sep">‹</span><span class="cur">فاتورة ${inv.num}</span></div>`;
+  html+=`<div class="toolbar">
+    <button class="btn btn-p" onclick="cycleDetView()">${IC.view} العرض: ${VL[detView]}</button>
+    <button class="btn btn-g" onclick="cycleDetSort()">${IC.sort} الفرز: ${SL[detSort]}</button>
+    ${isDup?`<button class="btn btn-o" onclick="switchTab('dup')">${IC.warn} عرض في كشف التشابه</button>`:''}
+  </div>`;
+  html+=`
     <div class="info-card">
       <div class="info-title"><span class="no">فاتورة رقم ${inv.num}</span><span class="tag">${esc(inv.type)}</span></div>
       <div class="info-grid">
@@ -558,11 +569,12 @@ function renderInvoiceDetail(){
     </tr></tfoot></table></div>`;
   }else{
     html+=`<div class="list-scroll">`;
-    items.forEach((it,x)=>{html+=`<div class="inv-row" style="grid-template-columns:70px 1fr auto;cursor:default">
-      <div class="inv-no" style="font-size:.85em;background:#fff;border:1px solid var(--line)">${x+1}</div>
-      <div><div class="inv-l1">${esc(it.name)}</div>
-      <div class="inv-l2">${esc(it.unit)||'قطعة'} · الكمية ${fmt(it.qty)} · سعر ${fmt(it.price)}</div>
-      ${it.note?`<div class="inv-note">${esc(it.note)}</div>`:''}</div>
+    items.forEach((it,x)=>{html+=`<div class="inv-row" style="grid-template-columns:1fr auto;cursor:default">
+      <div>
+        <div class="inv-l1">${x+1}. ${esc(it.name)}</div>
+        <div class="inv-l2">${esc(it.unit)||'قطعة'} · الكمية ${fmt(it.qty)} · سعر ${fmt(it.price)}</div>
+        ${it.note?`<div class="inv-note">${esc(it.note)}</div>`:''}
+      </div>
       <div class="inv-sum"><div class="v">${fmt(it.total)}</div><div class="l">الإجمالي</div></div>
     </div>`});
     html+=`</div>
@@ -576,9 +588,9 @@ function renderInvoiceDetail(){
   document.getElementById('viewCats').innerHTML=html;
 }
 
-/* ========== قسم الديون ========== */
+/* ========== الديون ========== */
 function filteredDebts(){
-  let a=[...APP.debts];
+  let a=[...(APP.debts||[])];
   if(debFilter==='lna')a=a.filter(d=>d.dir==='لنا');
   if(debFilter==='lah')a=a.filter(d=>d.dir==='لهم');
   if(debSort==='bal')a.sort((x,y)=>y.bal-x.bal);
@@ -589,16 +601,20 @@ function filteredDebts(){
 function renderDebts(){
   curDeb=null;
   const all=APP.debts||[];
+  const box=document.getElementById('viewDebts');
   if(!all.length){
-    document.getElementById('viewDebts').innerHTML=`<div class="loading"><h3 style="color:var(--danger)">تعذر تحميل ملف الديون.xlsx</h3><p style="color:var(--muted);margin-top:8px">تأكد من رفع الملف في نفس المستودع بجانب index.html</p></div>`;
+    box.innerHTML=`<div class="loading"><h3 style="color:var(--danger)">تعذر تحميل ملف الديون</h3>
+      <p style="color:var(--muted);margin-top:10px">المسبب الأكثر شيوعاً: اسم الملف في المستودع يحتوي حروفاً خفية.<br>
+      الحل الأسهل: احذف الملف من المستودع وأعد رفعه باسم <b>debts.xlsx</b> (اكتب الاسم يدوياً بالإنجليزية).</p>
+      <button class="btn btn-p" style="margin-top:16px" onclick="init()">إعادة المحاولة</button></div>`;
     return;
   }
   const st=debStats(all);
   const list=filteredDebts();
   let html=`<div class="fade">
   <div class="kpis">
-    <div class="kpi g"><div class="v g">${fmt(st.lna)}</div><div class="l">إجمالي المستحق لنا (لم يدفعوا)</div></div>
-    <div class="kpi o"><div class="v o">${fmt(st.lah)}</div><div class="l">إجمالي المستحق لهم (علينا)</div></div>
+    <div class="kpi g"><div class="v g">${fmt(st.lna)}</div><div class="l">إجمالي المستحق لنا</div></div>
+    <div class="kpi o"><div class="v o">${fmt(st.lah)}</div><div class="l">إجمالي المستحق لهم</div></div>
     <div class="kpi r"><div class="v r">${fmt(st.more)}</div><div class="l">متأخر أكثر من 120 يوم</div></div>
     <div class="kpi b"><div class="v">${all.length}</div><div class="l">عدد الحسابات</div></div>
   </div>
@@ -619,9 +635,9 @@ function renderDebts(){
       <th>رمز الحساب</th><th>اسم الحساب</th><th>الجوال</th><th>الاتجاه</th><th>الرصيد المتبقي</th>
       <th>1-30 يوم</th><th>31-60</th><th>61-90</th><th>91-120</th><th>أكثر من 120</th><th>نسبة التأخر</th>
     </tr></thead><tbody>`;
-    list.forEach((d,i)=>{
+    list.forEach(d=>{
       const pct=d.bal?((d.bMore/d.bal)*100).toFixed(1):'0';
-      html+=`<tr class="cat-card" style="cursor:pointer" data-name="${esc(d.name)} ${d.code} ${d.phone}" onclick="openDebtor(${APP.debts.indexOf(d)})">
+      html+=`<tr class="cat-card" style="cursor:pointer" data-name="${esc(d.name)} ${d.code} ${d.phone}" onclick="openDebtor(${all.indexOf(d)})">
         <td class="num">${d.code}</td><td class="name">${esc(d.name)}</td>
         <td>${d.phone?`<a href="tel:${d.phone}">${d.phone}</a>`:'-'}</td>
         <td class="${d.dir==='لنا'?'lna':'lah'}">${d.dir||'-'}</td>
@@ -635,7 +651,7 @@ function renderDebts(){
   }else{
     html+=`<div class="cat-grid">`;
     list.forEach(d=>{
-      html+=`<div class="cat-card" data-name="${esc(d.name)} ${d.code} ${d.phone}" onclick="openDebtor(${APP.debts.indexOf(d)})" style="align-items:stretch">
+      html+=`<div class="cat-card" data-name="${esc(d.name)} ${d.code} ${d.phone}" onclick="openDebtor(${all.indexOf(d)})" style="align-items:stretch">
         <div class="cat-info">
           <div class="cat-name">${esc(d.name)}</div>
           <div class="cat-meta">${d.code}${d.phone?' · '+d.phone:''}</div>
@@ -648,13 +664,9 @@ function renderDebts(){
     html+=`</div>`;
   }
   html+=`</div></div>`;
-  document.getElementById('viewDebts').innerHTML=html;
+  box.innerHTML=html;
 }
-function openDebtor(i){
-  curDeb=APP.debts[i];
-  renderDebtorDetail();
-  window.scrollTo(0,0);
-}
+function openDebtor(i){curDeb=APP.debts[i];renderDebtorDetail();window.scrollTo(0,0)}
 function renderDebtorDetail(){
   const d=curDeb;
   const mid=d.b60+d.b90+d.b120;
@@ -698,8 +710,8 @@ function renderDebtorDetail(){
     </div>
     <div class="sum-line">
       ${d.dir==='لنا'
-        ? `خلاصة الحساب: <b>${esc(d.name)}</b> متبقي عليه <b class="dir-lna">${fmt(d.bal)}</b> — وصل ضمن المدة <b>${fmt(d.b30)}</b>، وتأخر بين 31-120 يوم <b>${fmt(mid)}</b>، والذي ما زال غير مدفوع حتى الآن (أكثر من 120 يوم) <b style="color:var(--danger)">${fmt(d.bMore)}</b>.`
-        : `خلاصة الحساب: <b>${esc(d.name)}</b> لنا عنده رصيد باتجاه <b class="dir-lah">لهم</b> بمبلغ <b>${fmt(d.bal)}</b> — أي أن علينا نحن الدفع، منه متأخر أكثر من 120 يوم <b style="color:var(--danger)">${fmt(d.bMore)}</b>.`}
+        ? `خلاصة الحساب: <b>${esc(d.name)}</b> متبقي عليه <b class="dir-lna">${fmt(d.bal)}</b> — ضمن المدة <b>${fmt(d.b30)}</b>، وتأخر 31-120 يوم <b>${fmt(mid)}</b>، والذي ما زال غير مدفوع (+120 يوم) <b style="color:var(--danger)">${fmt(d.bMore)}</b>.`
+        : `خلاصة الحساب: <b>${esc(d.name)}</b> رصيد باتجاه <b class="dir-lah">لهم</b> بمبلغ <b>${fmt(d.bal)}</b> — أي أن علينا نحن الدفع، منه متأخر أكثر من 120 يوم <b style="color:var(--danger)">${fmt(d.bMore)}</b>.`}
     </div>
     <div style="margin-top:16px"><button class="btn btn-g" onclick="renderDebts()">العودة لقائمة الديون</button></div>
   </div>`;
@@ -709,18 +721,16 @@ function renderDebtorDetail(){
 /* ========== البدء ========== */
 async function init(){
   try{
-    const rows=await fetchFirst(FILE_NAMES);
-    if(!rows)throw new Error('لم يتم العثور على ملف فواتير الشراء');
-    APP=analyze(rows);
+    const invRows=await loadSheet('فواتير',INV_NAMES);
+    if(!invRows)throw new Error('لم يتم العثور على ملف فواتير الشراء في المستودع');
+    APP=analyze(invRows);
     APP.dupDays=computeDuplicates(APP.categories);
     APP.dupSet=new Set();
     APP.dupDays.forEach(d=>d.invoices.forEach(i=>APP.dupSet.add(d.category+'|'+i.num+'|'+i.dateKey)));
-    const drows=await fetchFirst(DEBT_NAMES);
-    APP.debts=drows?parseDebts(drows):[];
+    const debRows=await loadSheet('الديون',DEB_NAMES);
+    APP.debts=debRows?parseDebts(debRows):[];
     const keys=APP.categories.flatMap(c=>c.invoicesList.map(i=>i.dateKey)).sort();
-    const ds=APP.debts.length?debStats(APP.debts):null;
-    document.getElementById('periodInfo').textContent=
-      `${keys[0]} → ${keys[keys.length-1]} · ${APP.categories.length} صنف`+(ds?` · ديون لنا ${fmt(ds.lna)}`:'');
+    document.getElementById('periodInfo').textContent=`${keys[0]} → ${keys[keys.length-1]} · ${APP.categories.length} صنف · ${APP.debts.length} حساب دين`;
     renderDup();renderCats();renderDebts();switchTab('dup');
   }catch(e){
     document.getElementById('viewDup').innerHTML=`<div class="loading"><div class="spin"></div><h3 style="color:var(--danger)">تعذر تحميل البيانات</h3><p style="color:var(--muted);margin-top:8px">${esc(e.message)}</p><button class="btn btn-p" style="margin-top:16px" onclick="init()">إعادة المحاولة</button></div>`;
